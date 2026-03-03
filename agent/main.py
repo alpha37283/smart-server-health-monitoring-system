@@ -1,2 +1,15 @@
 
-# the main file, which willl create the response
+
+''' now
+Initialize event bus
+Initialize scheduler
+Register collectors'''
+
+
+
+
+""" later
+Start anomaly engine
+Start websocket server
+Start backend forwarder
+"""
