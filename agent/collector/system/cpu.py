@@ -51,7 +51,7 @@ async def collect_cpu(event_bus):
     }
 
     # Right after building the event
-    print(f"[CPU Collector] Collected event: {event}")
+    print(f"CPU Data collected")
 
     # Publish event to event bus
     await event_bus.publish(event)
