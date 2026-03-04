@@ -15,21 +15,16 @@ from agent.collector.system.memory import collect_memory
 
 
 async def main():
-    # Create shared event bus
+    # shared event bus
     event_bus = EventBus()
 
-    # Create scheduler (3-second interval)
     scheduler = Scheduler(interval=3)
 
-    # Start CPU collector as background task
-    cpu_task = asyncio.create_task(
-        scheduler.run(collect_cpu, event_bus)
-    )
+    # CPU collector as background task
+    cpu_task = asyncio.create_task(scheduler.run(collect_cpu, event_bus))
 
-    # Start Memory collector as background task
-    memory_task = asyncio.create_task(
-        scheduler.run(collect_memory, event_bus)
-    )
+    # Memory collector as background task
+    memory_task = asyncio.create_task(scheduler.run(collect_memory, event_bus))
 
     print("Monitoring started... Press Ctrl+C to stop.")
 
