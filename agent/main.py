@@ -13,6 +13,7 @@ from core.scheduler import Scheduler
 from agent.collector.system.cpu import collect_cpu
 from agent.collector.system.memory import collect_memory
 from agent.collector.system.disk import collect_disk
+from agent.collector.system.process import collect_process
 
 
 async def main():
@@ -29,10 +30,12 @@ async def main():
 
     disk_task = asyncio.create_task(scheduler.run(collect_disk, event_bus))
 
+    process_task = asyncio.create_task(scheduler.run(collect_process, event_bus))
+
     print("Monitoring started... Press Ctrl+C to stop.")
 
     # Keep program running forever
-    await asyncio.gather(cpu_task, memory_task, disk_task)
+    await asyncio.gather(cpu_task, memory_task, disk_task, process_task)
 
 
 if __name__ == "__main__":
