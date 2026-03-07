@@ -1,37 +1,28 @@
 # core/event_bus.py
-
 import asyncio
-
+from typing import Callable, List
 
 class EventBus:
     """
-    Simple asynchronous event bus using asyncio.Queue.
-
-    Producers call publish().
-    Consumers call subscribe() to receive events.
+    Asynchronous EventBus with multi-subscriber support.
     """
 
     def __init__(self):
-        # Single queue for now (can be extended later)
-        self._queue = asyncio.Queue()
+        self._subscribers: List[Callable[[dict], asyncio.Future]] = []
 
-    async def publish(self, event):
+    def subscribe(self, callback: Callable[[dict], asyncio.Future]):
         """
-        Put an event into the queue.
-        This is called by producers (collectors, AI alerts, etc.)
+        Register a subscriber callback function.
+        The callback must be async and accept a single event dict.
         """
-        await self._queue.put(event)
+        self._subscribers.append(callback)
 
-    async def subscribe(self):
+    async def publish(self, event: dict):
         """
-        Wait and receive the next event.
-        This is called by consumers (AI, streaming, backend).
+        Publish an event to all subscribers concurrently.
         """
-        event = await self._queue.get()
-        return event
+        if not self._subscribers:
+            return
 
-
-'''
-this is a simple single-queue model.
-Later you can extend to multi-subscriber pattern
-'''
+        # Run all subscriber callbacks concurrently
+        await asyncio.gather(*(subscriber(event) for subscriber in self._subscribers))
