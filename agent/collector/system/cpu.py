@@ -30,6 +30,9 @@ async def collect_cpu(event_bus):
     # Get context switches
     ctx_switches = psutil.cpu_stats().ctx_switches
 
+    # Calculate system uptime
+    system_uptime_seconds = time.time() - psutil.boot_time()
+
     # Build event payload (simple structure for now)
     event = {
         "timestamp": time.time(),
@@ -47,6 +50,7 @@ async def collect_cpu(event_bus):
             "system_time": cpu_times.system,
             "context_switches": ctx_switches,
             "frequency_mhz": freq.current if freq else None,
+            "system_uptime_seconds": round(system_uptime_seconds, 2),
         }
     }
 
