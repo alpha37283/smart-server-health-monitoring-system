@@ -6,10 +6,8 @@ Receives metric events from all collectors (CPU, RAM, Disk, Process, etc.).
 
 Forwards those events to websocket_server for broadcasting to clients.
 
-Can also filter or transform the events if needed (e.g., converting units)."""
-
-# EventBus → subscribe() → receive events → send to ConnectionManager.broadcast()
-
+Can also filter or transform the events if needed (e.g., converting units).
+"""
 
 from streaming.connection_manager import ConnectionManager
 
@@ -26,9 +24,17 @@ class EventSubscriber:
     This component sits between the EventBus and the WebSocket layer.
     """
 
-    def __init__(self, event_bus, connection_manager: ConnectionManager):
+    def __init__(
+        self,
+        event_bus,
+        system_manager: ConnectionManager,
+        network_manager: ConnectionManager,
+        db_manager: ConnectionManager
+    ):
         self.event_bus = event_bus
-        self.connection_manager = connection_manager
+        self.system_manager = system_manager
+        self.network_manager = network_manager
+        self.db_manager = db_manager
 
     async def start(self):
         """
@@ -44,7 +50,7 @@ class EventSubscriber:
 
         event_type = event.get("type")
 
-        # For now we only forward SYSTEM metrics
+        # System metrics
         system_events = {
             "cpu_metrics",
             "memory_metrics",
@@ -52,5 +58,25 @@ class EventSubscriber:
             "process_metrics"
         }
 
+        # Future network metrics
+        network_events = {
+            "tcp_metrics",
+            "udp_metrics",
+            "bandwidth_metrics"
+        }
+
+        # Future database metrics
+        db_events = {
+            "db_query_metrics",
+            "db_connection_metrics",
+            "slow_query_metrics"
+        }
+
         if event_type in system_events:
-            await self.connection_manager.broadcast(event)
+            await self.system_manager.broadcast(event)
+
+        elif event_type in network_events:
+            await self.network_manager.broadcast(event)
+
+        elif event_type in db_events:
+            await self.db_manager.broadcast(event)
