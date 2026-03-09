@@ -15,7 +15,7 @@ from streaming.websocket_server import app, start_websocket
 
 async def main():
     event_bus = EventBus()
-    scheduler = Scheduler(interval=3)
+    scheduler = Scheduler(interval=0.8)
 
     # Start WebSocket subscriber
     start_websocket(event_bus)  # attaches handle_event callback
@@ -35,7 +35,7 @@ async def main():
 
     print("Monitoring + WebSocket server started... Press Ctrl+C to stop.")
 
-await asyncio.gather(*tasks, server_task) # return list or tuple of results
+    await asyncio.gather(*tasks, server_task)
 
 
 if __name__ == "__main__":

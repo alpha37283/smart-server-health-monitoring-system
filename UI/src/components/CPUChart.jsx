@@ -10,24 +10,33 @@ import {
 } from 'recharts';
 import { useMetrics } from '../context/MetricsContext';
 
+function formatTimeAgo(timestamp) {
+  if (!timestamp) return '—';
+  const mins = Math.floor((Date.now() - timestamp) / 60000);
+  if (mins === 0) return 'Now';
+  if (mins < 60) return `${mins}m ago`;
+  return `${Math.floor(mins / 60)}h ago`;
+}
+
 export default function CPUChart() {
   const { cpuMetrics, cpuHistory } = useMetrics();
   const currentUsage = cpuMetrics?.data?.cpu_usage ?? 0;
-  const chartData = cpuHistory.length > 0 ? cpuHistory : [{ time: '—', value: 0 }];
+  const chartData = cpuHistory.length > 0 ? cpuHistory : [{ index: 0, value: 0 }];
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
+      const timeLabel = formatTimeAgo(payload[0].payload.timestamp);
       return (
         <div className="bg-slate-900 text-white p-2 rounded shadow-xl border border-slate-700/50">
           <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-            {payload[0].payload.time}
+            {timeLabel}
           </div>
           <div className="flex items-center gap-2">
             <div className="size-2 rounded-full bg-blue-500"></div>
             <div className="text-xs font-bold">
               {payload[0].value}%
               <span className="font-normal opacity-60 ml-1">
-                {payload[0].payload.time}
+                {timeLabel}
               </span>
             </div>
           </div>
@@ -55,9 +64,10 @@ export default function CPUChart() {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
             <XAxis
-              dataKey="time"
+              dataKey="index"
               stroke="#64748b"
-              style={{ fontSize: '12px' }}
+              tick={false}
+              axisLine={{ stroke: '#64748b' }}
             />
             <YAxis stroke="#64748b" style={{ fontSize: '12px' }} />
             <Tooltip content={<CustomTooltip />} />

@@ -52,9 +52,11 @@ export function useMetricsWebSocket() {
             case 'cpu_metrics':
               setCpuMetrics(event);
               if (data.cpu_usage != null && typeof data.cpu_usage === 'number') {
-                setCpuHistory((prev) =>
-                  [...prev.slice(-(MAX_BUFFER - 1)), { time: new Date().toLocaleTimeString(), value: data.cpu_usage }]
-                );
+                const now = Date.now();
+                setCpuHistory((prev) => {
+                  const next = [...prev.slice(-(MAX_BUFFER - 1)), { timestamp: now, value: data.cpu_usage }];
+                  return next.map((p, i) => ({ ...p, index: i }));
+                });
               }
               if (data.load_avg) {
                 const i = indexRef.current++;
