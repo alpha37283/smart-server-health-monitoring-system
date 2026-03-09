@@ -1,21 +1,15 @@
 import React from 'react';
-
-const coreData = [
-  { id: 1, name: 'Core 01', usage: 12 },
-  { id: 2, name: 'Core 02', usage: 45 },
-  { id: 3, name: 'Core 03', usage: 8 },
-  { id: 4, name: 'Core 04', usage: 62 },
-  { id: 5, name: 'Core 05', usage: 31 },
-  { id: 6, name: 'Core 06', usage: 19 },
-  { id: 7, name: 'Core 07', usage: 88 },
-  { id: 8, name: 'Core 08', usage: 5 },
-  { id: 9, name: 'Core 09', usage: 27 },
-  { id: 10, name: 'Core 10', usage: 44 },
-  { id: 11, name: 'Core 11', usage: 12 },
-  { id: 12, name: 'Core 12', usage: 3 },
-];
+import { useMetrics } from '../context/MetricsContext';
 
 export default function PerCoreUsage() {
+  const { cpuMetrics } = useMetrics();
+  const perCore = cpuMetrics?.data?.per_core_usage ?? [];
+  const coreData = perCore.map((usage, i) => ({
+    id: i + 1,
+    name: `Core ${String(i + 1).padStart(2, '0')}`,
+    usage: typeof usage === 'number' ? Math.round(usage) : 0,
+  }));
+
   return (
     <section>
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">
