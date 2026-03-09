@@ -1,31 +1,42 @@
 import React from 'react';
 import { Repeat2, Zap } from 'lucide-react';
+import { useMetrics } from '../context/MetricsContext';
 
-const metricsData = [
-  {
-    title: 'Context Switches',
-    value: '12,482',
-    unit: '/sec',
-    icon: Repeat2,
-    color: 'text-blue-400',
-  },
-  {
-    title: 'CPU Frequency',
-    value: '3200',
-    unit: 'MHz',
-    icon: Zap,
-    color: 'text-blue-400',
-  },
-];
-
-const detailedMetricsData = [
-  { label: 'Interrupt Handling', value: '2.4%' },
-  { label: 'Exception Handling', value: '0.8%' },
-  { label: 'System Calls', value: '1.2%' },
-  { label: 'Thermal Throttling', value: 'Disabled' },
-];
+function formatNumber(n) {
+  if (n == null || typeof n !== 'number') return '—';
+  return n.toLocaleString();
+}
 
 export default function DetailedMetrics() {
+  const { cpuMetrics } = useMetrics();
+  const d = cpuMetrics?.data ?? {};
+  const contextSwitches = d.context_switches;
+  const frequencyMhz = d.frequency_mhz;
+
+  const metricsData = [
+    {
+      title: 'Context Switches',
+      value: formatNumber(contextSwitches),
+      unit: '',
+      icon: Repeat2,
+      color: 'text-blue-400',
+    },
+    {
+      title: 'CPU Frequency',
+      value: frequencyMhz != null ? String(Math.round(frequencyMhz)) : '—',
+      unit: 'MHz',
+      icon: Zap,
+      color: 'text-blue-400',
+    },
+  ];
+
+  const detailedMetricsData = [
+    { label: 'Interrupt Handling', value: 'N/A' },
+    { label: 'Exception Handling', value: 'N/A' },
+    { label: 'System Calls', value: 'N/A' },
+    { label: 'Thermal Throttling', value: 'N/A' },
+  ];
+
   return (
     <section>
       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">
