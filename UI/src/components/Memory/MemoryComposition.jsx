@@ -1,11 +1,24 @@
 import React from 'react';
+import { useMetrics } from '../../context/MetricsContext';
+
+function fmtGb(v) {
+  if (v == null || typeof v !== 'number') return '—';
+  return `${v} GB`;
+}
 
 export default function MemoryComposition() {
+  const { memoryMetrics } = useMetrics();
+  const d = memoryMetrics?.data ?? {};
+  const total = d.total_memory_gb ?? 1;
+  const active = d.active_memory_gb ?? 0;
+  const cached = d.cached_memory_gb ?? 0;
+  const inactive = d.inactive_memory_gb ?? 0;
+  const available = d.available_memory_gb ?? 0;
   const composition = [
-    { label: 'ACTIVE', value: '12.2 GB', color: 'bg-blue-600', percentage: 38 },
-    { label: 'CACHED', value: '8.0 GB', color: 'bg-blue-500', percentage: 25 },
-    { label: 'INACTIVE', value: '4.8 GB', color: 'bg-blue-400', percentage: 15 },
-    { label: 'AVAILABLE', value: '7.0 GB', color: 'bg-blue-300', percentage: 22 },
+    { label: 'ACTIVE', value: fmtGb(active), color: 'bg-blue-600', percentage: total > 0 ? Math.round((active / total) * 100) : 0 },
+    { label: 'CACHED', value: fmtGb(cached), color: 'bg-blue-500', percentage: total > 0 ? Math.round((cached / total) * 100) : 0 },
+    { label: 'INACTIVE', value: fmtGb(inactive), color: 'bg-blue-400', percentage: total > 0 ? Math.round((inactive / total) * 100) : 0 },
+    { label: 'AVAILABLE', value: fmtGb(available), color: 'bg-blue-300', percentage: total > 0 ? Math.round((available / total) * 100) : 0 },
   ];
 
   return (

@@ -17,10 +17,15 @@ export function useMetricsWebSocket() {
   const [load1mHistory, setLoad1mHistory] = useState([]);
   const [load5mHistory, setLoad5mHistory] = useState([]);
   const [load15mHistory, setLoad15mHistory] = useState([]);
+  const [memoryHistory, setMemoryHistory] = useState([]);
+  const [swapInHistory, setSwapInHistory] = useState([]);
+  const [swapOutHistory, setSwapOutHistory] = useState([]);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState(null);
 
   const indexRef = useRef(0);
+  const memIndexRef = useRef(0);
+  const memPrevRef = useRef({ swapInGb: null, swapOutGb: null, timestamp: null });
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const reconnectAttemptRef = useRef(0);
@@ -73,6 +78,28 @@ export function useMetricsWebSocket() {
               break;
             case 'memory_metrics':
               setMemoryMetrics(event);
+              if (data.memory_usage_percent != null && typeof data.memory_usage_percent === 'number') {
+                const now = Date.now();
+                setMemoryHistory((prev) => {
+                  const next = [...prev.slice(-(MAX_BUFFER - 1)), { timestamp: now, value: data.memory_usage_percent }];
+                  return next.map((p, i) => ({ ...p, index: i }));
+                });
+              }
+              if (data.swap_in_gb != null && data.swap_out_gb != null) {
+                const now = Date.now();
+                const prev = memPrevRef.current;
+                if (prev.timestamp != null && prev.swapInGb != null && prev.swapOutGb != null) {
+                  const dt = (now - prev.timestamp) / 1000;
+                  if (dt > 0) {
+                    const rateIn = (data.swap_in_gb - prev.swapInGb) / dt;
+                    const rateOut = (data.swap_out_gb - prev.swapOutGb) / dt;
+                    const i = memIndexRef.current++;
+                    setSwapInHistory((p) => [...p.slice(-(MAX_BUFFER - 1)), { index: i, value: Math.max(0, rateIn) }]);
+                    setSwapOutHistory((p) => [...p.slice(-(MAX_BUFFER - 1)), { index: i, value: Math.max(0, rateOut) }]);
+                  }
+                }
+                memPrevRef.current = { swapInGb: data.swap_in_gb, swapOutGb: data.swap_out_gb, timestamp: now };
+              }
               break;
             case 'disk_metrics':
               setDiskMetrics(event);
@@ -118,6 +145,9 @@ export function useMetricsWebSocket() {
     load1mHistory,
     load5mHistory,
     load15mHistory,
+    memoryHistory,
+    swapInHistory,
+    swapOutHistory,
     connected,
     error,
   };

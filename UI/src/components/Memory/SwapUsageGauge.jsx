@@ -1,11 +1,15 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { useMetrics } from '../../context/MetricsContext';
 
 export default function SwapUsageGauge() {
-  const percentage = 26;
+  const { memoryMetrics } = useMetrics();
+  const d = memoryMetrics?.data ?? {};
+  const percentage = typeof d.swap_usage_percent === 'number' ? Math.round(d.swap_usage_percent) : 0;
+  const swapTotalGb = d.swap_total_gb;
   const data = [
     { name: 'Used', value: percentage },
-    { name: 'Available', value: 100 - percentage },
+    { name: 'Available', value: Math.max(0, 100 - percentage) },
   ];
 
   return (
@@ -37,7 +41,9 @@ export default function SwapUsageGauge() {
 
         <div className="text-center">
           <span className="text-4xl font-bold text-white">{percentage}%</span>
-          <div className="text-slate-400 text-xs font-semibold uppercase mt-1">of 8GB</div>
+          <div className="text-slate-400 text-xs font-semibold uppercase mt-1">
+            of {swapTotalGb != null ? `${swapTotalGb} GB` : '—'}
+          </div>
         </div>
       </div>
 

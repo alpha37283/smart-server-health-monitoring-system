@@ -1,27 +1,19 @@
 import React from 'react';
+import { useMetrics } from '../../context/MetricsContext';
+
+function fmtGb(v) {
+  if (v == null || typeof v !== 'number') return '—';
+  return `${v} GB`;
+}
 
 export default function MemoryMetricsCards() {
+  const { memoryMetrics } = useMetrics();
+  const d = memoryMetrics?.data ?? {};
   const metrics = [
-    {
-      label: 'Total RAM',
-      value: '32 GB',
-      color: 'text-slate-300',
-    },
-    {
-      label: 'Available RAM',
-      value: '12.4 GB',
-      color: 'text-slate-300',
-    },
-    {
-      label: 'Swap Total',
-      value: '8 GB',
-      color: 'text-slate-300',
-    },
-    {
-      label: 'Swap Used',
-      value: '2.1 GB',
-      color: 'text-blue-400',
-    },
+    { label: 'Total RAM', value: fmtGb(d.total_memory_gb), color: 'text-slate-300' },
+    { label: 'Available RAM', value: fmtGb(d.available_memory_gb), color: 'text-slate-300' },
+    { label: 'Swap Total', value: fmtGb(d.swap_total_gb), color: 'text-slate-300' },
+    { label: 'Swap Used', value: fmtGb(d.swap_used_gb), color: 'text-blue-400' },
   ];
 
   return (

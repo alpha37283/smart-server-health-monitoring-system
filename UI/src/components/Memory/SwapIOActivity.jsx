@@ -1,17 +1,18 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
-const data = [
-  { time: '0m', swapIn: 0.8, swapOut: 0.9 },
-  { time: '5m', swapIn: 1.2, swapOut: 0.95 },
-  { time: '10m', swapIn: 0.7, swapOut: 0.85 },
-  { time: '15m', swapIn: 1.5, swapOut: 1.0 },
-  { time: '20m', swapIn: 1.1, swapOut: 0.8 },
-  { time: '25m', swapIn: 0.9, swapOut: 0.92 },
-  { time: '30m', swapIn: 1.3, swapOut: 1.05 },
-];
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useMetrics } from '../../context/MetricsContext';
 
 export default function SwapIOActivity() {
+  const { swapInHistory, swapOutHistory } = useMetrics();
+  const len = Math.min(swapInHistory.length, swapOutHistory.length);
+  const data = len > 0
+    ? swapInHistory.slice(0, len).map((p, i) => ({
+        index: p.index,
+        swapIn: p.value,
+        swapOut: swapOutHistory[i]?.value ?? 0,
+      }))
+    : [{ index: 0, swapIn: 0, swapOut: 0 }];
+
   return (
     <div className="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
       <div className="flex justify-between items-center mb-6">
@@ -35,10 +36,10 @@ export default function SwapIOActivity() {
           <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
             <XAxis
-              dataKey="time"
+              dataKey="index"
               stroke="#94a3b8"
-              style={{ fontSize: '12px' }}
-              tick={{ fill: '#94a3b8' }}
+              tick={false}
+              axisLine={{ stroke: '#94a3b8' }}
             />
             <YAxis
               stroke="#94a3b8"

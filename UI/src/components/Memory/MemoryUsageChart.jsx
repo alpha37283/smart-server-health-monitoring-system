@@ -1,17 +1,12 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-const data = [
-  { time: '0m', value: 58 },
-  { time: '5m', value: 59 },
-  { time: '10m', value: 60 },
-  { time: '15m', value: 62 },
-  { time: '20m', value: 61 },
-  { time: '25m', value: 60 },
-  { time: '30m', value: 61.2 },
-];
+import { useMetrics } from '../../context/MetricsContext';
 
 export default function MemoryUsageChart({ timeRange, setTimeRange }) {
+  const { memoryMetrics, memoryHistory } = useMetrics();
+  const currentPercent = memoryMetrics?.data?.memory_usage_percent ?? 0;
+  const chartData = memoryHistory.length > 0 ? memoryHistory : [{ index: 0, value: 0 }];
+
   return (
     <div className="bg-slate-900/50 p-6 rounded-xl border border-slate-800">
       <div className="flex justify-between items-end mb-6">
@@ -20,8 +15,7 @@ export default function MemoryUsageChart({ timeRange, setTimeRange }) {
             Memory Usage (%) - Last 30 Minutes
           </h3>
           <div className="flex items-center gap-3">
-            <span className="text-4xl font-bold text-white">61.2%</span>
-            <span className="text-emerald-400 text-sm font-semibold">+2.4%</span>
+            <span className="text-4xl font-bold text-white">{typeof currentPercent === 'number' ? currentPercent.toFixed(1) : '0'}%</span>
           </div>
         </div>
         <div className="flex gap-2">
@@ -43,7 +37,7 @@ export default function MemoryUsageChart({ timeRange, setTimeRange }) {
 
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
             <defs>
               <linearGradient id="memoryGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
@@ -52,10 +46,10 @@ export default function MemoryUsageChart({ timeRange, setTimeRange }) {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
             <XAxis
-              dataKey="time"
+              dataKey="index"
               stroke="#94a3b8"
-              style={{ fontSize: '12px' }}
-              tick={{ fill: '#94a3b8' }}
+              tick={false}
+              axisLine={{ stroke: '#94a3b8' }}
             />
             <YAxis
               stroke="#94a3b8"
