@@ -75,6 +75,12 @@ export default function MemoryUsageChart({ timeRange, setTimeRange }) {
           </AreaChart>
         </ResponsiveContainer>
       </div>
+      <div className="flex justify-between mt-4 text-[10px] uppercase font-bold text-slate-400 tracking-widest">
+        <span>30m ago</span>
+        <span>20m ago</span>
+        <span>10m ago</span>
+        <span>Now</span>
+      </div>
     </div>
   );
 }
