@@ -94,9 +94,9 @@ async def collect_disk(event_bus):
             "free_disk_gb": to_gb(disk_usage.free),
             "disk_usage_percent": disk_usage.percent,
 
-            # IO Counters (Cumulative)
-            "read_bytes_gb": round(io.read_bytes / BYTES_TO_GB, 2),
-            "write_bytes_gb": round(io.write_bytes / BYTES_TO_GB, 2),
+            # IO Counters (Converted to MB/s instead of cumulative GB)
+            "read_mb_s": read_speed_mb,
+            "write_mb_s": write_speed_mb,
             "read_count": io.read_count,
             "write_count": io.write_count,
 
