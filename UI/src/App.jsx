@@ -7,6 +7,7 @@ import LoadAverage from './components/LoadAverage';
 import TimeBreakdown from './components/TimeBreakdown';
 import DetailedMetrics from './components/DetailedMetrics';
 import Memory from './pages/Memory';
+import Disk from './pages/Disk';
 
 export default function App() {
   const [activeNav, setActiveNav] = useState('CPU');
@@ -62,6 +63,8 @@ export default function App() {
           )}
 
           {activeNav === 'Memory' && <Memory />}
+
+          {activeNav === 'Disk' && <Disk />}
         </main>
       </div>
     </div>
