@@ -12,6 +12,9 @@ export function useMetricsWebSocket() {
   const [cpuMetrics, setCpuMetrics] = useState(null);
   const [memoryMetrics, setMemoryMetrics] = useState(null);
   const [diskMetrics, setDiskMetrics] = useState(null);
+  const [diskTransferHistory, setDiskTransferHistory] = useState([]);
+  const [diskIoHistory, setDiskIoHistory] = useState([]);
+  const [diskQueueHistory, setDiskQueueHistory] = useState([]);
   const [processMetrics, setProcessMetrics] = useState(null);
   const [cpuHistory, setCpuHistory] = useState([]);
   const [load1mHistory, setLoad1mHistory] = useState([]);
@@ -26,6 +29,7 @@ export function useMetricsWebSocket() {
   const indexRef = useRef(0);
   const memIndexRef = useRef(0);
   const memPrevRef = useRef({ swapInGb: null, swapOutGb: null, timestamp: null });
+  const diskPrevRef = useRef({ readCount: null, writeCount: null, timestamp: null });
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const reconnectAttemptRef = useRef(0);
@@ -103,6 +107,30 @@ export function useMetricsWebSocket() {
               break;
             case 'disk_metrics':
               setDiskMetrics(event);
+              if (data.disk_read_speed_mb_s != null && data.disk_write_speed_mb_s != null) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                setDiskTransferHistory((p) => [...p.slice(-(MAX_BUFFER - 1)), { time: timeStr, readSpeed: data.disk_read_speed_mb_s, writeSpeed: data.disk_write_speed_mb_s }]);
+              }
+              if (data.queue_length != null) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                setDiskQueueHistory((p) => [...p.slice(-(MAX_BUFFER - 1)), { time: timeStr, waits: data.queue_length }]);
+              }
+              if (data.read_count != null && data.write_count != null) {
+                const now = Date.now();
+                const timeStr = new Date(now).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const prev = diskPrevRef.current;
+                if (prev.timestamp != null && prev.readCount != null && prev.writeCount != null) {
+                  const dt = (now - prev.timestamp) / 1000;
+                  if (dt > 0) {
+                    const rOps = Math.max(0, (data.read_count - prev.readCount) / dt);
+                    const wOps = Math.max(0, (data.write_count - prev.writeCount) / dt);
+                    setDiskIoHistory((p) => [...p.slice(-(MAX_BUFFER - 1)), { time: timeStr, readOps: Math.round(rOps), writeOps: Math.round(wOps) }]);
+                  }
+                }
+                diskPrevRef.current = { readCount: data.read_count, writeCount: data.write_count, timestamp: now };
+              }
               break;
             case 'process_metrics':
               setProcessMetrics(event);
@@ -148,6 +176,9 @@ export function useMetricsWebSocket() {
     memoryHistory,
     swapInHistory,
     swapOutHistory,
+    diskTransferHistory,
+    diskIoHistory,
+    diskQueueHistory,
     connected,
     error,
   };

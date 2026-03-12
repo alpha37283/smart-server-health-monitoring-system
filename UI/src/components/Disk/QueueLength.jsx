@@ -1,20 +1,13 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
+import { useMetrics } from '../../context/MetricsContext';
+
 export default function QueueLength() {
-  const data = [
-    { time: '10:45', waits: 2 },
-    { time: '10:47', waits: 5 },
-    { time: '10:49', waits: 8 },
-    { time: '10:51', waits: 12 },
-    { time: '10:53', waits: 18 },
-    { time: '10:55', waits: 15 },
-    { time: '11:00', waits: 9 },
-    { time: '11:05', waits: 6 },
-    { time: '11:10', waits: 4 },
-    { time: '11:15', waits: 7 },
-    { time: '11:20', waits: 11 },
-    { time: '11:25', waits: 8 },
-  ];
+  const { diskQueueHistory } = useMetrics();
+  
+  const data = diskQueueHistory.length > 0 
+    ? diskQueueHistory 
+    : [{ time: '00:00', waits: 0 }];
 
   return (
     <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">
@@ -37,7 +30,11 @@ export default function QueueLength() {
 
       <div className="flex items-center justify-between text-xs text-slate-400 mt-4">
         <span>Wait count</span>
-        <span>Avg: 0.08</span>
+        <span>Avg: {(() => {
+          if (!diskQueueHistory.length) return '0.00';
+          const sum = diskQueueHistory.reduce((acc, curr) => acc + (curr.waits || 0), 0);
+          return (sum / diskQueueHistory.length).toFixed(2);
+        })()}</span>
       </div>
     </div>
   );

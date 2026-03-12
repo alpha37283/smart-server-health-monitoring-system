@@ -1,16 +1,13 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+import { useMetrics } from '../../context/MetricsContext';
+
 export default function TransferSpeeds() {
-  const data = [
-    { time: '10:45', readSpeed: 45, writeSpeed: 28 },
-    { time: '10:47', readSpeed: 52, writeSpeed: 31 },
-    { time: '10:49', readSpeed: 48, writeSpeed: 26 },
-    { time: '10:51', readSpeed: 65, writeSpeed: 38 },
-    { time: '10:53', readSpeed: 78, writeSpeed: 45 },
-    { time: '10:55', readSpeed: 85, writeSpeed: 52 },
-    { time: '11:00', readSpeed: 92, writeSpeed: 58 },
-    { time: '11:05', readSpeed: 78, writeSpeed: 48 },
-  ];
+  const { diskTransferHistory } = useMetrics();
+
+  const data = diskTransferHistory.length > 0 
+    ? diskTransferHistory 
+    : [{ time: '00:00', readSpeed: 0, writeSpeed: 0 }];
 
   return (
     <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">

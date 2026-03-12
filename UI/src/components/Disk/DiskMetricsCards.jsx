@@ -1,9 +1,22 @@
+import { useMetrics } from '../../context/MetricsContext';
+
+function fmtGb(v) {
+  if (v == null || typeof v !== 'number') return '—';
+  return `${v} GB`;
+}
+function fmtPct(v) {
+  if (v == null || typeof v !== 'number') return '—';
+  return `${v}%`;
+}
+
 export default function DiskMetricsCards() {
+  const { diskMetrics } = useMetrics();
+  const d = diskMetrics?.data ?? {};
   const metrics = [
-    { label: 'Total Disk', value: '512 GB', color: 'text-slate-400' },
-    { label: 'Used Disk', value: '210 GB', color: 'text-primary' },
-    { label: 'Free Disk', value: '302 GB', color: 'text-slate-400' },
-    { label: 'Disk Usage', value: '41%', color: 'text-primary' },
+    { label: 'Total Disk', value: fmtGb(d.total_disk_gb), color: 'text-slate-400' },
+    { label: 'Used Disk', value: fmtGb(d.used_disk_gb), color: 'text-primary' },
+    { label: 'Free Disk', value: fmtGb(d.free_disk_gb), color: 'text-slate-400' },
+    { label: 'Disk Usage', value: fmtPct(d.disk_usage_percent), color: 'text-primary' },
   ];
 
   return (

@@ -1,15 +1,13 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+import { useMetrics } from '../../context/MetricsContext';
+
 export default function ReadWriteOperations() {
-  const data = [
-    { time: '10:45', readOps: 120, writeOps: 85 },
-    { time: '10:47', readOps: 145, writeOps: 92 },
-    { time: '10:49', readOps: 165, writeOps: 78 },
-    { time: '10:51', readOps: 185, writeOps: 105 },
-    { time: '10:53', readOps: 210, writeOps: 128 },
-    { time: '10:55', readOps: 195, writeOps: 115 },
-    { time: '11:00', readOps: 175, writeOps: 95 },
-  ];
+  const { diskIoHistory } = useMetrics();
+
+  const data = diskIoHistory.length > 0 
+    ? diskIoHistory 
+    : [{ time: '00:00', readOps: 0, writeOps: 0 }];
 
   return (
     <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">
@@ -48,8 +46,8 @@ export default function ReadWriteOperations() {
       </ResponsiveContainer>
 
       <div className="flex justify-between text-xs text-slate-400 mt-4">
-        <span>Read: 1.2k</span>
-        <span>Write: 0.4k</span>
+        <span>Read Ops/s</span>
+        <span>Write Ops/s</span>
       </div>
     </div>
   );

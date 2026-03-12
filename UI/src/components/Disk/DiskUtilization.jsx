@@ -1,7 +1,9 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
+import { useMetrics } from '../../context/MetricsContext';
+
 const CustomGaugeLabel = (props) => {
-  const { cx, cy } = props;
+  const { cx, cy, util } = props;
   return (
     <g>
       <text
@@ -11,7 +13,7 @@ const CustomGaugeLabel = (props) => {
         dominantBaseline="central"
         className="fill-primary text-4xl font-bold"
       >
-        32%
+        {util != null ? `${util.toFixed(1)}%` : '0%'}
       </text>
       <text
         x={cx}
@@ -27,9 +29,14 @@ const CustomGaugeLabel = (props) => {
 };
 
 export default function DiskUtilization() {
+  const { diskMetrics } = useMetrics();
+  const d = diskMetrics?.data ?? {};
+  
+  const util = typeof d.disk_utilization_percent === 'number' ? d.disk_utilization_percent : 0;
+
   const data = [
-    { value: 32, fill: '#3b82f6' },
-    { value: 68, fill: '#334155' },
+    { value: util, fill: '#3b82f6' },
+    { value: Math.max(0, 100 - util), fill: '#334155' },
   ];
 
   return (
@@ -50,7 +57,7 @@ export default function DiskUtilization() {
                 innerRadius={70}
                 outerRadius={110}
                 dataKey="value"
-                label={<CustomGaugeLabel />}
+                label={(props) => <CustomGaugeLabel {...props} util={util} />}
               >
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
