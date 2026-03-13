@@ -8,6 +8,7 @@ import TimeBreakdown from './components/TimeBreakdown';
 import DetailedMetrics from './components/DetailedMetrics';
 import Memory from './pages/Memory';
 import Disk from './pages/Disk';
+import Processes from './pages/Processes';
 
 export default function App() {
   const [activeNav, setActiveNav] = useState('CPU');
@@ -65,6 +66,8 @@ export default function App() {
           {activeNav === 'Memory' && <Memory />}
 
           {activeNav === 'Disk' && <Disk />}
+
+          {activeNav === 'Processes' && <Processes />}
         </main>
       </div>
     </div>
