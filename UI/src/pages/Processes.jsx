@@ -1,24 +1,45 @@
 import React, { useState, useMemo } from 'react';
 import ProcessMetricsCards from '../components/Processes/ProcessMetricsCards';
 import ProcessTable from '../components/Processes/ProcessTable';
+import { useMetrics } from '../context/MetricsContext';
+
+function formatUptime(seconds) {
+  if (!seconds || seconds < 0) return '0s';
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
 
 export default function Processes() {
+  const { processMetrics } = useMetrics();
+  const d = processMetrics?.data ?? {};
+
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState('cpu');
   const [sortOrder, setSortOrder] = useState('desc');
 
-  const allProcesses = [
-    { pid: 4128, name: 'nginx_master', cpu: 84.2, memory: 12.5, memMB: 1424.2, threads: 32, status: 'RUNNING', uptime: '14h 22m' },
-    { pid: 1022, name: 'syslogd', cpu: 0.4, memory: 0.1, memMB: 8.4, threads: 2, status: 'SLEEPING', uptime: '12d 04h' },
-    { pid: 5521, name: 'cleanup_task', cpu: 0.0, memory: 0.0, memMB: 0.0, threads: 1, status: 'ZOMBIE', uptime: '02m 14s' },
-    { pid: 882, name: 'redis-server', cpu: 4.8, memory: 42.1, memMB: 4112.9, threads: 4, status: 'STOPPED', uptime: '1h 05m' },
-    { pid: 91, name: 'sshd', cpu: 0.1, memory: 0.3, memMB: 12.2, threads: 1, status: 'RUNNING', uptime: '12d 04h' },
-    { pid: 3210, name: 'python_app', cpu: 15.3, memory: 28.4, memMB: 2856.1, threads: 8, status: 'RUNNING', uptime: '5d 12h' },
-    { pid: 2048, name: 'node_server', cpu: 22.1, memory: 35.6, memMB: 3584.9, threads: 12, status: 'RUNNING', uptime: '3d 08h' },
-    { pid: 1256, name: 'mysql_db', cpu: 3.4, memory: 18.9, memMB: 1896.5, threads: 16, status: 'RUNNING', uptime: '20d 02h' },
-    { pid: 756, name: 'apache2', cpu: 1.2, memory: 5.3, memMB: 534.8, threads: 5, status: 'RUNNING', uptime: '15d 10h' },
-  ];
+  const allProcesses = useMemo(() => {
+    const processMap = new Map();
+    (d.top_cpu_processes || []).forEach(p => processMap.set(p.pid, p));
+    (d.top_memory_processes || []).forEach(p => processMap.set(p.pid, p));
+
+    return Array.from(processMap.values()).map(p => ({
+      pid: p.pid,
+      name: p.name,
+      cpu: p.cpu_percent || 0,
+      memory: p.memory_percent || 0,
+      memMB: p.memory_mb || 0,
+      threads: p.threads || 0,
+      status: (typeof p.status === 'string' ? p.status.toUpperCase() : 'UNKNOWN'),
+      uptime: formatUptime(p.uptime_seconds)
+    }));
+  }, [d.top_cpu_processes, d.top_memory_processes]);
 
   const filteredProcesses = useMemo(() => {
     return allProcesses.filter(p =>
@@ -31,10 +52,12 @@ export default function Processes() {
   const paginatedProcesses = filteredProcesses.slice((currentPage - 1) * 5, currentPage * 5);
 
   const metrics = {
-    total: allProcesses.length,
-    running: allProcesses.filter(p => p.status === 'RUNNING').length,
-    sleeping: allProcesses.filter(p => p.status === 'SLEEPING').length,
-    avgCPU: (allProcesses.reduce((sum, p) => sum + p.cpu, 0) / allProcesses.length).toFixed(1),
+    total: d.process_summary?.total || 0,
+    running: d.process_summary?.running || 0,
+    sleeping: d.process_summary?.sleeping || 0,
+    avgCPU: allProcesses.length > 0
+      ? (allProcesses.reduce((sum, p) => sum + p.cpu, 0) / allProcesses.length).toFixed(1)
+      : '0.0',
   };
 
   return (

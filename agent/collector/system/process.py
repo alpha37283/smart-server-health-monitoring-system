@@ -7,7 +7,7 @@ from collections import defaultdict
 BYTES_TO_MB = 1024 ** 2
 
 # Number of top processes to report
-TOP_N = 5
+TOP_N = 20
 
 
 async def collect_process(event_bus):
@@ -150,6 +150,6 @@ async def collect_process(event_bus):
         }
     }
 
-    print(f"[Process Collector] Collected event: {event}")
+    print(f"Processes Data Collected Total of {TOP_N}")
 
     await event_bus.publish(event)
