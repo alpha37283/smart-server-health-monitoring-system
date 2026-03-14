@@ -239,3 +239,13 @@ Why important
 Detect network congestion
 
 Detect routing issues
+
+
+
+
+1. implementing each metrics 
+- we dont need separate event queue as it can handle 1000+events/second
+- neither we need another scheduler
+- hence the architecture will remain same
+2. on completion connect the websocket server as subscriber (event queue will be same so)
+3. you can create metric + ui or first all metric then their UIs
