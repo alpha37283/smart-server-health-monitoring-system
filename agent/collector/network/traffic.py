@@ -113,6 +113,28 @@ def packets_receive_rate_per_sec():
 
 
 
+# this calculate that how much of NIC bandwidth is being used 
+def bandwidth_utilization_percent(send_rate, receive_rate, interface="eth0"):
+
+    if send_rate is None or receive_rate is None:
+        return None
+
+    stats = psutil.net_if_stats().get(interface)
+
+    if not stats or stats.speed == 0:
+        return None
+
+    # Mbps -> bytes/sec
+    max_bytes_per_sec = (stats.speed * 1_000_000) / 8
+
+    current_throughput = send_rate + receive_rate
+
+    utilization = (current_throughput / max_bytes_per_sec) * 100
+
+    return round(utilization, 2)
+
+
+
 async def collect_network_traffic(event_bus):
     """
     Collect basic network traffic metrics using psutil.
