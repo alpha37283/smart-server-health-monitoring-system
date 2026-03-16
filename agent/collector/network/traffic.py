@@ -58,6 +58,60 @@ def bytes_received_per_second():
     return diff_bytes / diff_time   
     
 
+prev_packets_sent = None
+prev_packets_recv = None
+prev_timestamp_packets = None   
+
+
+def packets_send_rate_per_sec():
+    global prev_packets_sent, prev_timestamp_packets
+
+    net = psutil.net_io_counters()
+    current_packets_sent = net.packets_sent
+    current_time = time.time()
+
+    if prev_packets_sent is None or prev_timestamp_packets is None:
+        prev_packets_sent = current_packets_sent
+        prev_timestamp_packets = current_time
+        return None
+
+    diff_packets = current_packets_sent - prev_packets_sent
+    diff_time = current_time - prev_timestamp_packets
+
+    prev_packets_sent = current_packets_sent
+    prev_timestamp_packets = current_time
+
+    if diff_time <= 0 or diff_packets < 0:
+        return None
+
+    return diff_packets / diff_time
+
+
+def packets_receive_rate_per_sec():
+    global prev_packets_recv, prev_timestamp_packets
+
+    net = psutil.net_io_counters()
+    current_packets_recv = net.packets_recv
+    current_time = time.time()
+
+    if prev_packets_recv is None or prev_timestamp_packets is None:
+        prev_packets_recv = current_packets_recv
+        prev_timestamp_packets = current_time
+        return None
+
+    diff_packets = current_packets_recv - prev_packets_recv
+    diff_time = current_time - prev_timestamp_packets
+
+    prev_packets_recv = current_packets_recv
+    prev_timestamp_packets = current_time
+
+    if diff_time <= 0 or diff_packets < 0:
+        return None
+
+    return diff_packets / diff_time
+
+
+
 
 async def collect_network_traffic(event_bus):
     """
@@ -81,8 +135,8 @@ async def collect_network_traffic(event_bus):
             # Derived metrics (to implement later)
             "send_rate_bytes_per_sec": bytes_sent_per_second(),
             "receive_rate_bytes_per_sec": bytes_received_per_second(),
-            "send_rate_packets_per_sec": None,
-            "receive_rate_packets_per_sec": None,
+            "send_rate_packets_per_sec": packets_send_rate_per_sec(),
+            "receive_rate_packets_per_sec": packets_receive_rate_per_sec(),
             "bandwidth_utilization_percent": None,
         }
     }
