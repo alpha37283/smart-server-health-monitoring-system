@@ -1,11 +1,46 @@
 
 import psutil
 import time
-
-
+import os # for log file access
 
 prev_established_conns = set()
 prev_timestamp = None
+
+
+# Keep track of file position between calls
+log_positions = {}
+
+
+def failed_connections_from_logs(log_file="/var/log/syslog", keywords=None):
+    """
+    Count failed connection attempts from log file.
+    """
+    global log_positions
+
+    if keywords is None:
+        keywords = ["connection refused", "failed to connect", "timeout", "reset by peer"]
+
+    # Track last read position
+    last_pos = log_positions.get(log_file, 0)
+
+    if not os.path.exists(log_file):
+        return None
+
+    count = 0
+
+    with open(log_file, "r") as f:
+        f.seek(last_pos)
+        for line in f:
+            if any(keyword.lower() in line.lower() for keyword in keywords):
+                count += 1
+
+        # update last position
+        log_positions[log_file] = f.tell()
+
+    return count
+
+
+
 
 # established connections per second 
 
@@ -88,7 +123,7 @@ async def collect_network_connections(event_bus):
             "time_wait_connections": time_wait_connections,
 
             # Derived / later
-            "connection_rate": None,
+            "connection_rate": established_connection_rate(),
             "failed_connections": None,
         }
     }
