@@ -3,6 +3,49 @@ import psutil
 import time
 
 
+
+prev_established_conns = set()
+prev_timestamp = None
+
+# established connections per second 
+
+def established_connection_rate():
+    global prev_established_conns, prev_timestamp
+
+    current_time = time.time()
+    connections = psutil.net_connections()
+
+    # extract only ESTABLISHED connections
+    current_established = set()
+
+    for conn in connections:
+        if conn.status == "ESTABLISHED":
+            key = (conn.laddr, conn.raddr, conn.type)
+            current_established.add(key)
+
+    # first run
+    if prev_timestamp is None:
+        prev_established_conns = current_established
+        prev_timestamp = current_time
+        return None
+
+    # find new established connections
+    new_connections = current_established - prev_established_conns
+
+    time_diff = current_time - prev_timestamp
+
+    # update state
+    prev_established_conns = current_established
+    prev_timestamp = current_time
+
+    if time_diff <= 0:
+        return None
+
+    # normalize to per second
+    return len(new_connections) / time_diff
+
+
+
 async def collect_network_connections(event_bus):
     """
     Collect network connection-related metrics using psutil.
