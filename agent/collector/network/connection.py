@@ -6,12 +6,81 @@ import os # for log file access
 prev_established_conns = set()
 prev_timestamp = None
 
+# store previous counter
+prev_attempt_fails = None
 
 # Keep track of file position between calls
 log_positions = {}
 
+# store previous counters
+_prev_tcp_stats = None
+_prev_timestamp = None
 
-def failed_connections_from_logs(log_file="/var/log/syslog", keywords=None):
+
+def failed_connections_snmp(per_minute=False):
+    """
+    Return TCP connection metrics from /proc/net/snmp.
+    
+    Returns:
+        dict with keys:
+            - total_attempts: ActiveOpens (delta since last call or None)
+            - failed_attempts: AttemptFails (delta since last call or None)
+        If per_minute=True, rates are normalized to per minute.
+    """
+    global _prev_tcp_stats, _prev_timestamp
+
+    try:
+        with open("/proc/net/snmp", "r") as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        return None
+
+    # locate TCP section
+    for i, line in enumerate(lines):
+        if line.startswith("Tcp:"):
+            header_line = line
+            value_line = lines[i + 1]
+            break
+    else:
+        return None
+
+    headers = header_line.strip().split()[1:]  # skip "Tcp:"
+    values = list(map(int, value_line.strip().split()[1:]))  # skip "Tcp:"
+
+    current_stats = dict(zip(headers, values))
+    current_time = time.time()
+
+    # first run
+    if _prev_tcp_stats is None:
+        _prev_tcp_stats = current_stats
+        _prev_timestamp = current_time
+        return {"total_attempts": None, "failed_attempts": None}
+
+    # compute deltas
+    delta_time = current_time - _prev_timestamp
+    total_attempts = current_stats.get("ActiveOpens", 0) - _prev_tcp_stats.get("ActiveOpens", 0)
+    failed_attempts = current_stats.get("AttemptFails", 0) - _prev_tcp_stats.get("AttemptFails", 0)
+
+    _prev_tcp_stats = current_stats
+    _prev_timestamp = current_time
+
+    if total_attempts < 0:
+        total_attempts = None  # counter reset
+    if failed_attempts < 0:
+        failed_attempts = None
+
+    # normalize to per minute if requested
+    if per_minute and delta_time > 0:
+        factor = 60 / delta_time
+        if total_attempts is not None:
+            total_attempts = total_attempts * factor
+        if failed_attempts is not None:
+            failed_attempts = failed_attempts * factor
+
+    return {"total_attempts": total_attempts, "failed_attempts": failed_attempts}
+
+
+def failed_connections_logs(log_file="/var/log/syslog", keywords=None):
     """
     Count failed connection attempts from log file.
     """
@@ -38,7 +107,6 @@ def failed_connections_from_logs(log_file="/var/log/syslog", keywords=None):
         log_positions[log_file] = f.tell()
 
     return count
-
 
 
 
@@ -124,7 +192,8 @@ async def collect_network_connections(event_bus):
 
             # Derived / later
             "connection_rate": established_connection_rate(),
-            "failed_connections": None,
+            "failed_connections_total": failed_connections_logs(),  #  there are two methods for this, failed connectionfrom logs
+            "failed_connections_second" : failed_connections_snmp(per_minute=True)
         }
     }
 
