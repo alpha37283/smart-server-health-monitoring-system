@@ -1,6 +1,8 @@
 
 # here we will have our error or drop collector, drop means if some packet is dropped 
-#
+# following calculated vlaues are in per second, 
+# calculate the difference in error and drop counts between two consecutive calls,
+# then divide by the time difference to get rates per second.
 
 import psutil
 import time
@@ -66,18 +68,42 @@ def error_drop_rates_per_second():
         "drop_per_sec" : None
     }
 
+def aggregate_error_drop_rates(rates):
+    """
+    Aggregate total error and drop rates from per-second metrics.
+    """
+
+    err_in = rates.get("packet_errors_in_per_sec")
+    err_out = rates.get("packet_errors_out_per_sec")
+    drop_in = rates.get("packet_drops_in_per_sec")
+    drop_out = rates.get("packet_drops_out_per_sec")
+
+    def safe_sum(a, b):
+        if a is None or b is None:
+            return None
+        return a + b
+
+    error_rate = safe_sum(err_in, err_out)
+    drop_rate = safe_sum(drop_in, drop_out)
+
+    return {
+        "error_rate": error_rate,
+        "drop_rate": drop_rate
+    }
+
 
 async def collect_network_errors(event_bus):
-    """
-    Collect network error/drop rates (per second).
-    """
-
+ 
     rates = error_drop_rates_per_second()
+    aggregates = aggregate_error_drop_rates(rates)
 
     event = {
         "timestamp": time.time(),
         "type": "network_error_metrics",
-        "data": rates
+        "data": {
+            **rates,
+            **aggregates
+        }
     }
 
     print("Network Error Data collected")
