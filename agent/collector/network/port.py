@@ -127,14 +127,3 @@ async def collect_port_activity(event_bus):
     print("Port Activity Data collected")
 
     await event_bus.publish(event)
-
-why we are using lambda function 
-
-what this means =>     # skip if no local address
-        if not conn.laddr:
-            continue
-
-
-            what is this 
-             # union of ports (handle new/disappearing ports)
-    all_ports = set(connections_per_port.keys()) | set(_prev_connections_per_port.keys())
