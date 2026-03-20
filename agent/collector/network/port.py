@@ -9,11 +9,8 @@ _prev_connections_per_port = {}
 _prev_timestamp = None
 
 
-
+# Return top N active ports based on connection count.
 def get_top_active_ports(connections_per_port, top_n=15):
-    """
-    Return top N active ports based on connection count.
-    """
 
     if not connections_per_port:
         return []
