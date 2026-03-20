@@ -4,6 +4,27 @@ import psutil
 import time
 
 
+def get_top_active_ports(connections_per_port, top_n=15):
+    """
+    Return top N active ports based on connection count.
+    """
+
+    if not connections_per_port:
+        return []
+
+    sorted_ports = sorted(
+        connections_per_port.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+    top_ports = sorted_ports[:top_n]
+
+    return [
+        {"port": port, "connections": count}
+        for port, count in top_ports
+    ]
+
 def get_port_metrics():
     """
     Returns:
@@ -50,10 +71,8 @@ async def collect_port_activity(event_bus):
         "type": "network_port_metrics",
         "data": {
             **data,
-
-            # Derived (later)
-            "top_active_ports": None,
-            "port_connection_rate": None
+            "top_active_ports": None, # top ports sorted based on number of connections 
+            "port_connection_rate": None # number of new connections per port per minute being created
         }
     }
 
