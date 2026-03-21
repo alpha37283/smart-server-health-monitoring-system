@@ -1,11 +1,10 @@
 import psutil
+import time
 
 
-def get_process_network_usage():
+async def collect_process_network_usage(event_bus):
     """
-    Returns:
-    - connections_per_process (detailed)
-    - network_process_list (summary)
+    Collect process-level network usage metrics.
     """
 
     connections = psutil.net_connections()
@@ -25,7 +24,6 @@ def get_process_network_usage():
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
 
-        # initialize process 
         if pid not in connections_per_process:
             connections_per_process[pid] = {
                 "pid": pid,
@@ -33,7 +31,6 @@ def get_process_network_usage():
                 "connections": []
             }
 
-        # skip if no local address
         if not conn.laddr:
             continue
 
@@ -42,7 +39,7 @@ def get_process_network_usage():
             "status": conn.status
         })
 
-    # this part ( network_process_list) is derivedfrom connection list 
+    # derive lightweight list
     network_process_list = [
         {
             "pid": data["pid"],
@@ -51,7 +48,19 @@ def get_process_network_usage():
         for data in connections_per_process.values()
     ]
 
-    return {
-        "connections_per_process": connections_per_process,
-        "network_process_list": network_process_list
+    event = {
+        "timestamp": time.time(),
+        "type": "network_process_metrics",
+        "data": {
+            "connections_per_process": connections_per_process,
+            "network_process_list": network_process_list,
+
+            # Derived (later)
+            "top_processes_by_connections": None,
+            "top_processes_by_bandwidth": None
+        }
     }
+
+    print("Process Network Data collected")
+
+    await event_bus.publish(event)
