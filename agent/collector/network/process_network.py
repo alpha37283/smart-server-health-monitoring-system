@@ -42,7 +42,7 @@ def get_process_network_usage():
             "status": conn.status
         })
 
-    # this part is derivedfrom connection list --------
+    # this part ( network_process_list) is derivedfrom connection list 
     network_process_list = [
         {
             "pid": data["pid"],
