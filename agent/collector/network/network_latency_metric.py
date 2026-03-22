@@ -45,19 +45,25 @@ def get_latency_metrics():
         rtt = get_socket_rtt(host)
         handshake = get_handshake_time(host)
 
+        # status logic: for request 
+        status = "healthy" if rtt is not None else "unreachable"
+
         latency_per_target[host] = {
             "name": name,
-            "latency_ms": rtt
+            "latency_ms": rtt,
+            "status": status
         }
 
         rtt_per_target[host] = {
             "name": name,
-            "rtt_ms": rtt
+            "rtt_ms": rtt,
+            "status": status
         }
 
         handshake_per_target[host] = {
             "name": name,
-            "handshake_ms": handshake
+            "handshake_ms": handshake,
+            "status": "healthy" if handshake is not None else "unreachable"
         }
 
     return {
@@ -68,7 +74,7 @@ def get_latency_metrics():
 
 
 
-def get_average_latency(latency_per_target):
+def get_latency_stats(latency_per_target):
 
     values = [
         v["latency_ms"]
@@ -77,9 +83,17 @@ def get_average_latency(latency_per_target):
     ]
 
     if not values:
-        return None
+        return {
+            "average": None,
+            "min": None,
+            "max": None
+        }
 
-    return sum(values) / len(values)
+    return {
+        "average": sum(values) / len(values),
+        "min": min(values),
+        "max": max(values)
+    }
 
 
 
@@ -122,9 +136,9 @@ async def collect_latency_metrics(event_bus):
 
     data = get_latency_metrics()
 
-    avg_latency = get_average_latency(data["latency_per_target"])
-    avg_rtt = get_average_rtt(data["rtt_per_target"])
-    avg_handshake = get_average_handshake(data["handshake_per_target"])
+    latency_stats = get_latency_stats(data["latency_per_target"])
+    rtt_stats = get_latency_stats(data["rtt_per_target"])
+    handshake_stats = get_latency_stats(data["handshake_per_target"])
 
     event = {
         "timestamp": time.time(),
@@ -132,9 +146,12 @@ async def collect_latency_metrics(event_bus):
         "data": {
             **data,
 
-            "average_latency_ms": avg_latency,
-            "packet_round_trip_time": avg_rtt,
-            "connection_handshake_time": avg_handshake
+            "average_latency_ms": latency_stats["average"],
+            "min_latency_ms": latency_stats["min"],
+            "max_latency_ms": latency_stats["max"],
+
+            "packet_round_trip_time": rtt_stats["average"],
+            "connection_handshake_time": handshake_stats["average"]
         }
     }
 
