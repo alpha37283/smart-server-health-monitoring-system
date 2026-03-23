@@ -106,6 +106,6 @@ async def collect_network_errors(event_bus):
         }
     }
 
-    print("Network Error Data collected")
+    print("Network Error Data collected : ", event)
 
     await event_bus.publish(event)

@@ -152,5 +152,5 @@ async def collect_network_traffic(event_bus):
         }
     }
 
-    print("Network Traffic Data collected")
+    print("Network Traffic Data collected : ", event)
     await event_bus.publish(event)

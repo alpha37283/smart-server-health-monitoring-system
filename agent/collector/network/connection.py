@@ -197,6 +197,6 @@ async def collect_network_connections(event_bus):
         }
     }
 
-    print("Network Connection Data collected")
+    print("Network Connection Data collected : ", event)
 
     await event_bus.publish(event)
