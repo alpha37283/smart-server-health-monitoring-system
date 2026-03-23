@@ -1,7 +1,7 @@
-
 import psutil
 import time
 import os # for log file access
+import socket
 
 prev_established_conns = set()
 prev_timestamp = None
@@ -166,9 +166,9 @@ async def collect_network_connections(event_bus):
 
     for conn in connections:
         # Type
-        if conn.type == psutil.SOCK_STREAM:
+        if conn.type == socket.SOCK_STREAM:
             tcp_connections += 1
-        elif conn.type == psutil.SOCK_DGRAM:
+        elif conn.type == socket.SOCK_DGRAM:
             udp_connections += 1
 
         # Status (only applies to TCP)
