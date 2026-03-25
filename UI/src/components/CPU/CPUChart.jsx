@@ -1,6 +1,6 @@
 import React from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, } from 'recharts';
-import { useMetrics } from '../context/MetricsContext';
+import { useMetrics } from '../../context/MetricsContext';
 
 function formatTimeAgo(timestamp) {
   if (!timestamp) return '—';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Repeat2, Zap } from 'lucide-react';
-import { useMetrics } from '../context/MetricsContext';
+import { useMetrics } from '../../context/MetricsContext';
 
 function formatNumber(n) {
   if (n == null || typeof n !== 'number') return '—';

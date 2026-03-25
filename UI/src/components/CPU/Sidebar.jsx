@@ -1,15 +1,16 @@
-import React from 'react';
-import {
-  Settings,
-  Shield,
-  FileText,
-  Grid3X3,
-  Network,
-  HardDrive,
-  Zap,
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { Settings, Shield, FileText, Grid3X3, Network, HardDrive, Zap, ChevronDown, Wifi, BarChart3, } from 'lucide-react';
 
 export default function Sidebar({ activeNav, setActiveNav }) {
+  const [expandedGroups, setExpandedGroups] = useState({ System: true, Network: false });
+
+  const toggleGroup = (group) => {
+    setExpandedGroups((prev) => ({
+      ...prev,
+      [group]: !prev[group],
+    }));
+  };
+
   const navItems = [
     { id: 'CPU', label: 'CPU', icon: Zap },
     { id: 'Memory', label: 'Memory', icon: Grid3X3 },
@@ -17,8 +18,12 @@ export default function Sidebar({ activeNav, setActiveNav }) {
     { id: 'Processes', label: 'Processes', icon: FileText },
   ];
 
+  const networkItems = [
+    { id: 'Connections', label: 'Connections', icon: Wifi },
+    { id: 'TrafficAnalysis', label: 'Traffic Analysis', icon: BarChart3 },
+  ];
+
   const mainItems = [
-    { id: 'Network', label: 'Network', icon: Network },
     { id: 'Security', label: 'Security', icon: Shield },
     { id: 'Settings', label: 'Settings', icon: Settings },
   ];
@@ -40,29 +45,66 @@ export default function Sidebar({ activeNav, setActiveNav }) {
       <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
         {/* System Group */}
         <div className="mb-4">
-          <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-600/10 text-blue-400 mb-1">
+          <button
+            onClick={() => toggleGroup('System')}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-600/10 text-blue-400 mb-1 w-full hover:bg-blue-600/20 transition-colors"
+          >
             <Grid3X3 size={18} />
-            <span className="text-sm font-medium">System</span>
-          </div>
-          <div className="pl-9 space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveNav(item.id)}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all ${
-                    activeNav === item.id
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-400 hover:bg-slate-800'
-                  }`}
-                >
-                  <Icon size={16} />
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
+            <span className="text-sm font-medium flex-1 text-left">System</span>
+            <ChevronDown size={16} className={`transition-transform duration-200 ${expandedGroups.System ? 'rotate-180' : ''}`} />
+          </button>
+          {expandedGroups.System && (
+            <div className="pl-9 space-y-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveNav(item.id)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all ${activeNav === item.id
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-400 hover:bg-slate-800'
+                      }`}
+                  >
+                    <Icon size={16} />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Network Group */}
+        <div className="mb-4">
+          <button
+            onClick={() => toggleGroup('Network')}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-blue-400 mb-1 w-full hover:bg-blue-600/20 transition-colors"
+          >
+            <Network size={18} />
+            <span className="text-sm font-medium flex-1 text-left">Network</span>
+            <ChevronDown size={16} className={`transition-transform duration-200 ${expandedGroups.Network ? 'rotate-180' : ''}`} />
+          </button>
+          {expandedGroups.Network && (
+            <div className="pl-9 space-y-1">
+              {networkItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveNav(item.id)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all ${activeNav === item.id
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-400 hover:bg-slate-800'
+                      }`}
+                  >
+                    <Icon size={16} />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Main Navigation */}
@@ -72,11 +114,10 @@ export default function Sidebar({ activeNav, setActiveNav }) {
             <button
               key={item.id}
               onClick={() => setActiveNav(item.id)}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all ${
-                activeNav === item.id
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium w-full transition-all ${activeNav === item.id
                   ? 'bg-blue-600 text-white'
                   : 'text-slate-400 hover:bg-slate-800'
-              }`}
+                }`}
             >
               <Icon size={18} />
               {item.label}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useMetrics } from '../context/MetricsContext';
+import { useMetrics } from '../../context/MetricsContext';
 
 export default function LoadAverage() {
   const { cpuMetrics, load1mHistory, load5mHistory, load15mHistory } = useMetrics();

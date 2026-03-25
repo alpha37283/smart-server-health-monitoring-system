@@ -5,6 +5,7 @@ import CPU from './pages/CPU';
 import Memory from './pages/Memory';
 import Disk from './pages/Disk';
 import Processes from './pages/Processes';
+import Connections from './pages/Connections';
 
 export default function App() {
   const [activeNav, setActiveNav] = useState('CPU');
@@ -30,6 +31,8 @@ export default function App() {
           {activeNav === 'Disk' && <Disk />}
 
           {activeNav === 'Processes' && <Processes />}
+
+          {activeNav === 'Connections' && <Connections />}
         </main>
       </div>
     </div>

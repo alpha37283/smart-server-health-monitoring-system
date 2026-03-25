@@ -1,5 +1,5 @@
 import React from 'react';
-import { useMetrics } from '../context/MetricsContext';
+import { useMetrics } from '../../context/MetricsContext';
 
 export default function PerCoreUsage() {
   const { cpuMetrics } = useMetrics();
