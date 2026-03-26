@@ -27,6 +27,12 @@ async def main():
     # Start WebSocket subscriber
     start_websocket(event_bus)  # attaches handle_event callback
 
+
+      # Run Uvicorn server in another task
+    config = uvicorn.Config(app, host="0.0.0.0", port=8000, log_level="info")
+    server = uvicorn.Server(config)
+    server_task = asyncio.create_task(server.serve())
+
     # Start collectors as background tasks
     system_tasks = [
         asyncio.create_task(scheduler.run(collect_cpu, event_bus)),
@@ -43,11 +49,6 @@ async def main():
         asyncio.create_task(scheduler.run(collect_process_network_usage, event_bus)),
         asyncio.create_task(scheduler.run(collect_network_traffic, event_bus))
     ]
-
-    # Run Uvicorn server in another task
-    config = uvicorn.Config(app, host="0.0.0.0", port=8000, log_level="info")
-    server = uvicorn.Server(config)
-    server_task = asyncio.create_task(server.serve())
 
     print("Monitoring + WebSocket server started... Press Ctrl+C to stop.")
 

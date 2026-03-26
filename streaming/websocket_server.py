@@ -17,9 +17,12 @@ SYSTEM_EVENTS = {
 }
 
 NETWORK_EVENTS = {
-    # future collectors
-    "tcp_metrics",
-    "traffic_metrics"
+    "network_process_metrics",
+    "network_connection_metrics",
+    "network_interface_metrics",
+    "network_traffic_metrics",
+    "network_error_metrics",
+    "network_latency_metrics"
 }
 
 DATABASE_EVENTS = {

@@ -58,11 +58,14 @@ class EventSubscriber:
             "process_metrics"
         }
 
-        # Future network metrics
+        # Network metrics
         network_events = {
-            "tcp_metrics",
-            "udp_metrics",
-            "bandwidth_metrics"
+            "network_process_metrics",
+            "network_connection_metrics",
+            "network_interface_metrics",
+            "network_traffic_metrics",
+            "network_error_metrics",
+            "network_latency_metrics"
         }
 
         # Future database metrics
