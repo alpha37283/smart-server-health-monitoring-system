@@ -1,20 +1,14 @@
 import psutil
 import time
+import asyncio
 
 
-async def collect_process_network_usage(event_bus):
-    """
-    Collect process-level network usage metrics.
-    """
-
+def get_connections_data():
     connections = psutil.net_connections()
-
     connections_per_process = {}
 
     for conn in connections:
-
         pid = conn.pid
-
         if pid is None:
             continue
 
@@ -39,7 +33,6 @@ async def collect_process_network_usage(event_bus):
             "status": conn.status
         })
 
-    # derive lightweight list
     network_process_list = [
         {
             "pid": data["pid"],
@@ -47,6 +40,13 @@ async def collect_process_network_usage(event_bus):
         }
         for data in connections_per_process.values()
     ]
+    return connections_per_process, network_process_list
+
+async def collect_process_network_usage(event_bus):
+    """
+    Collect process-level network usage metrics.
+    """
+    connections_per_process, network_process_list = await asyncio.to_thread(get_connections_data)
 
     event = {
         "timestamp": time.time(),

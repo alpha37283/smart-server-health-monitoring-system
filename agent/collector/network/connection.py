@@ -30,9 +30,9 @@ def failed_connections_snmp(per_minute=False):
     global _prev_tcp_stats, _prev_timestamp
 
     try:
-        with open("/proc/net/snmp", "r") as f:
+        with open("/proc/net/snmp", "r", errors="ignore") as f:
             lines = f.readlines()
-    except FileNotFoundError:
+    except (FileNotFoundError, PermissionError):
         return None
 
     # locate TCP section
@@ -97,17 +97,19 @@ def failed_connections_logs(log_file="/var/log/syslog", keywords=None):
 
     count = 0
 
-    with open(log_file, "r") as f:
-        f.seek(last_pos)
-        for line in f:
-            if any(keyword.lower() in line.lower() for keyword in keywords):
-                count += 1
+    try:
+        with open(log_file, "r", errors="ignore") as f:
+            f.seek(last_pos)
+            for line in f:
+                if any(keyword.lower() in line.lower() for keyword in keywords):
+                    count += 1
 
-        # update last position
-        log_positions[log_file] = f.tell()
+            # update last position
+            log_positions[log_file] = f.tell()
+    except (FileNotFoundError, PermissionError, UnicodeDecodeError):
+        return None
 
     return count
-
 
 
 # established connections per second 

@@ -1,5 +1,6 @@
 import socket
 import time
+import asyncio
 
 
 def get_socket_rtt(host, port=80, timeout=2):
@@ -134,7 +135,7 @@ def get_average_handshake(handshake_per_target):
 
 async def collect_latency_metrics(event_bus):
 
-    data = get_latency_metrics()
+    data = await asyncio.to_thread(get_latency_metrics)
 
     latency_stats = get_latency_stats(data["latency_per_target"])
     rtt_stats = get_latency_stats(data["rtt_per_target"])
