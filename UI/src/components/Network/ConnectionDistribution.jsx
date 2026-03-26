@@ -1,11 +1,22 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { useMetrics } from '../../context/MetricsContext';
 
 export default function ConnectionDistribution() {
+  const { networkConnectionMetrics } = useMetrics();
+  const d = networkConnectionMetrics?.data ?? {};
+
+  const total = d.total_connections || 0;
+  const tcp = d.tcp_connections || 0;
+  const udp = d.udp_connections || 0;
+  const remaining = Math.max(0, total - tcp - udp);
+
   const data = [
-    { name: 'TCP', value: 1800, fill: '#256af4' },
-    { name: 'UDP', value: 480, fill: '#60a5fa' },
-    { name: 'Remaining', value: 120, fill: '#475569' },
+    { name: 'TCP', value: tcp, fill: '#256af4' },
+    { name: 'UDP', value: udp, fill: '#60a5fa' },
+    { name: 'Remaining', value: remaining, fill: '#475569' },
   ];
+
+  let displayTotal = total > 1000 ? (total / 1000).toFixed(1) + 'k' : total.toString();
 
   const CustomLabel = (props) => {
     const { cx, cy } = props;
@@ -18,7 +29,7 @@ export default function ConnectionDistribution() {
           dominantBaseline="central"
           className="fill-slate-100 text-3xl font-bold"
         >
-          2.4k
+          {displayTotal}
         </text>
         <text
           x={cx}
@@ -64,21 +75,21 @@ export default function ConnectionDistribution() {
             <div className="w-3 h-3 rounded-sm bg-blue-600"></div>
             <div>
               <p className="text-xs text-slate-500 font-medium">TCP Connections</p>
-              <p className="text-lg font-bold">1,800</p>
+              <p className="text-lg font-bold">{tcp.toLocaleString()}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 rounded-sm bg-blue-400"></div>
             <div>
               <p className="text-xs text-slate-500 font-medium">UDP Connections</p>
-              <p className="text-lg font-bold">480</p>
+              <p className="text-lg font-bold">{udp.toLocaleString()}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 rounded-sm bg-slate-700"></div>
             <div>
               <p className="text-xs text-slate-500 font-medium">Remaining</p>
-              <p className="text-lg font-bold">120</p>
+              <p className="text-lg font-bold">{remaining.toLocaleString()}</p>
             </div>
           </div>
         </div>

@@ -8,6 +8,12 @@ function getWsUrl() {
   return `ws://${host}:${port}/ws/metrics/system`;
 }
 
+function getNetworkWsUrl() {
+  const host = import.meta.env.VITE_WS_HOST || window.location.hostname;
+  const port = import.meta.env.VITE_WS_PORT || '8000';
+  return `ws://${host}:${port}/ws/metrics/network`;
+}
+
 export function useMetricsWebSocket() {
   const [cpuMetrics, setCpuMetrics] = useState(null);
   const [memoryMetrics, setMemoryMetrics] = useState(null);
@@ -23,7 +29,12 @@ export function useMetricsWebSocket() {
   const [memoryHistory, setMemoryHistory] = useState([]);
   const [swapInHistory, setSwapInHistory] = useState([]);
   const [swapOutHistory, setSwapOutHistory] = useState([]);
+  const [networkConnectionMetrics, setNetworkConnectionMetrics] = useState(null);
+  const [networkErrorMetrics, setNetworkErrorMetrics] = useState(null);
+  const [connectionTrendsHistory, setConnectionTrendsHistory] = useState([]);
+  const [activityAndFailuresHistory, setActivityAndFailuresHistory] = useState([]);
   const [connected, setConnected] = useState(false);
+  const [networkConnected, setNetworkConnected] = useState(false);
   const [error, setError] = useState(null);
 
   const indexRef = useRef(0);
@@ -33,6 +44,10 @@ export function useMetricsWebSocket() {
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const reconnectAttemptRef = useRef(0);
+
+  const wsNetRef = useRef(null);
+  const reconnectNetTimeoutRef = useRef(null);
+  const reconnectNetAttemptRef = useRef(0);
 
   useEffect(() => {
     const url = getWsUrl();
@@ -156,11 +171,93 @@ export function useMetricsWebSocket() {
       };
     }
 
+    function connectNetwork() {
+      const wsNet = new WebSocket(getNetworkWsUrl());
+      wsNetRef.current = wsNet;
+
+      wsNet.onopen = () => {
+        if (mounted) {
+          setNetworkConnected(true);
+          reconnectNetAttemptRef.current = 0;
+        }
+      };
+
+      wsNet.onmessage = (ev) => {
+        if (!mounted) return;
+        try {
+          const event = JSON.parse(ev.data);
+          const { type, data } = event;
+          if (!data) return;
+
+          switch (type) {
+            case 'network_connection_metrics':
+              setNetworkConnectionMetrics(event);
+              if (data.total_connections != null) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                
+                setConnectionTrendsHistory((p) => [...p.slice(-(MAX_BUFFER - 1)), {
+                  time: timeStr,
+                  total: data.total_connections,
+                  tcp: data.tcp_connections,
+                  udp: data.udp_connections
+                }]);
+                
+                setActivityAndFailuresHistory((p) => {
+                  const last = p.length > 0 ? p[p.length - 1] : { failureRate: 0 };
+                  const fRate = data.failed_connections_second?.failed_attempts || last.failureRate || 0;
+                  return [...p.slice(-(MAX_BUFFER - 1)), {
+                    time: timeStr,
+                    connectionRate: data.connection_rate || 0,
+                    failureRate: fRate
+                  }];
+                });
+              }
+              break;
+            case 'network_error_metrics':
+              setNetworkErrorMetrics(event);
+              if (data.drop_rate != null || data.error_rate != null) {
+                setActivityAndFailuresHistory((p) => {
+                  if (p.length === 0) return p;
+                  const newP = [...p];
+                  const last = newP[newP.length - 1];
+                  // Update the last entry with actual drop/error rate if it acts as failure rate
+                  const failureRate = data.drop_rate + data.error_rate;
+                  newP[newP.length - 1] = { ...last, failureRate: failureRate };
+                  return newP;
+                });
+              }
+              break;
+            default:
+              break;
+          }
+        } catch (e) {
+          console.warn('[Metrics] Network Parse error:', e);
+        }
+      };
+
+      wsNet.onclose = () => {
+        if (mounted) setNetworkConnected(false);
+        if (!mounted) return;
+        const delay = Math.min(1000 * Math.pow(2, reconnectNetAttemptRef.current), 30000);
+        reconnectNetAttemptRef.current += 1;
+        reconnectNetTimeoutRef.current = setTimeout(connectNetwork, delay);
+      };
+
+      wsNet.onerror = () => {
+        // Handle error silently or update state
+      };
+    }
+
     connect();
+    connectNetwork();
+    
     return () => {
       mounted = false;
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (reconnectNetTimeoutRef.current) clearTimeout(reconnectNetTimeoutRef.current);
       if (wsRef.current) wsRef.current.close();
+      if (wsNetRef.current) wsNetRef.current.close();
     };
   }, []);
 
@@ -179,7 +276,12 @@ export function useMetricsWebSocket() {
     diskTransferHistory,
     diskIoHistory,
     diskQueueHistory,
+    networkConnectionMetrics,
+    networkErrorMetrics,
+    connectionTrendsHistory,
+    activityAndFailuresHistory,
     connected,
+    networkConnected,
     error,
   };
 }

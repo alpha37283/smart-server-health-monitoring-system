@@ -1,15 +1,10 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useMetrics } from '../../context/MetricsContext';
 
 export default function ConnectionTrends() {
-  const data = [
-    { time: '12:00', total: 2200, tcp: 1650, udp: 400 },
-    { time: '12:15', total: 2350, tcp: 1750, udp: 450 },
-    { time: '12:30', total: 2180, tcp: 1640, udp: 380 },
-    { time: '12:45', total: 2420, tcp: 1810, udp: 480 },
-    { time: '13:00', total: 2100, tcp: 1580, udp: 350 },
-    { time: '13:15', total: 2380, tcp: 1780, udp: 460 },
-    { time: '13:30', total: 2280, tcp: 1710, udp: 410 },
-  ];
+  const { connectionTrendsHistory } = useMetrics();
+  
+  const data = connectionTrendsHistory.length > 0 ? connectionTrendsHistory : [];
 
   return (
     <div className="bg-slate-900/50 border border-slate-800/30 rounded-lg p-6">

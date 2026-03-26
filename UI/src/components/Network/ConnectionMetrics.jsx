@@ -1,4 +1,13 @@
+import { useMetrics } from '../../context/MetricsContext';
+
 export default function ConnectionMetrics() {
+  const { networkConnectionMetrics } = useMetrics();
+  const d = networkConnectionMetrics?.data ?? {};
+  
+  const total = d.total_connections || 0;
+  const tcp = d.tcp_connections || 0;
+  const udp = d.udp_connections || 0;
+
   return (
     <div className="bg-slate-900 border border-slate-800/50 rounded-lg p-8 flex flex-col justify-between h-full">
       <div>
@@ -6,16 +15,16 @@ export default function ConnectionMetrics() {
         <div className="space-y-8">
           <div>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Total Active</p>
-            <p className="text-4xl font-bold text-white tracking-tight">2,412</p>
+            <p className="text-4xl font-bold text-white tracking-tight">{total.toLocaleString()}</p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-slate-900/40 rounded-lg border border-slate-800/30">
               <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">TCP Established</p>
-              <p className="text-2xl font-bold">1,850</p>
+              <p className="text-2xl font-bold">{tcp.toLocaleString()}</p>
             </div>
             <div className="p-4 bg-slate-900/40 rounded-lg border border-slate-800/30">
               <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">UDP Active</p>
-              <p className="text-2xl font-bold">562</p>
+              <p className="text-2xl font-bold">{udp.toLocaleString()}</p>
             </div>
           </div>
         </div>

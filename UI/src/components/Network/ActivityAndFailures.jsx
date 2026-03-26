@@ -1,15 +1,14 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useMetrics } from '../../context/MetricsContext';
 
 export default function ActivityAndFailures() {
-  const data = [
-    { time: '12:00', connectionRate: 12, failureRate: 0.8 },
-    { time: '12:15', connectionRate: 14, failureRate: 1.2 },
-    { time: '12:30', connectionRate: 11, failureRate: 0.9 },
-    { time: '12:45', connectionRate: 15, failureRate: 2.1 },
-    { time: '13:00', connectionRate: 10, failureRate: 1.5 },
-    { time: '13:15', connectionRate: 13, failureRate: 1.1 },
-    { time: '13:30', connectionRate: 12, failureRate: 0.7 },
-  ];
+  const { activityAndFailuresHistory, networkConnectionMetrics } = useMetrics();
+  
+  const data = activityAndFailuresHistory.length > 0 ? activityAndFailuresHistory : [];
+  
+  const lastActivity = data.length > 0 ? data[data.length - 1] : { connectionRate: 0, failureRate: 0 };
+  const d = networkConnectionMetrics?.data ?? {};
+  const failedTotal = d.failed_connections_total || 0;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -49,7 +48,7 @@ export default function ActivityAndFailures() {
         <div className="bg-slate-900 border border-slate-800/50 rounded-lg p-6 flex flex-col justify-center h-[calc(50%-12px)]">
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Connection Rate</p>
           <div className="flex items-baseline gap-2">
-            <p className="text-3xl font-bold tracking-tight text-white">12.5</p>
+            <p className="text-3xl font-bold tracking-tight text-white">{Number(lastActivity.connectionRate).toFixed(1)}</p>
             <p className="text-xs font-bold text-slate-500 tracking-tighter uppercase">conn/sec</p>
           </div>
         </div>
@@ -58,8 +57,8 @@ export default function ActivityAndFailures() {
         <div className="bg-red-950/30 border border-red-900/30 rounded-lg p-6 flex flex-col justify-center h-[calc(50%-12px)]">
           <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-2">Failed Connections</p>
           <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-bold tracking-tight text-red-500">3</p>
-            <div className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-500 border border-red-500/30 uppercase">Spike Detected</div>
+            <p className="text-3xl font-bold tracking-tight text-red-500">{failedTotal}</p>
+            {failedTotal > 0 && <div className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-500 border border-red-500/30 uppercase">Spike Detected</div>}
           </div>
         </div>
       </div>
