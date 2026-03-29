@@ -148,7 +148,7 @@ async def collect_network_traffic(event_bus):
             "receive_rate_bytes_per_sec": bytes_received_per_second(),
             "send_rate_packets_per_sec": packets_send_rate_per_sec(),
             "receive_rate_packets_per_sec": packets_receive_rate_per_sec(),
-            "bandwidth_utilization_percent": None,  # to be filled later
+            "bandwidth_utilization_percent": None,  # this is not working = ? 
         }
     }
 
