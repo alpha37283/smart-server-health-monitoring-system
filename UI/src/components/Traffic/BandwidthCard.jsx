@@ -1,10 +1,18 @@
-export default function BandwidthCard() {
+export default function BandwidthCard({ utilizationPercent }) {
+  const pct =
+    utilizationPercent != null && Number.isFinite(utilizationPercent)
+      ? Math.min(100, Math.max(0, utilizationPercent))
+      : null;
+  const displayPct = pct != null ? `${pct.toFixed(1)}%` : 'N/A';
+  const barPrimary = pct != null ? `${pct}%` : '0%';
+  const barSecondary = pct != null ? `${Math.min(15, Math.max(0, 100 - pct))}%` : '15%';
+
   return (
     <div className="bg-[#0f1521] p-6 rounded border border-slate-800/50">
       <div className="flex justify-between items-end mb-6">
         <div>
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Bandwidth Utilization</p>
-          <h2 className="text-6xl font-black text-slate-100 tracking-tighter">42.8%</h2>
+          <h2 className="text-6xl font-black text-slate-100 tracking-tighter">{displayPct}</h2>
         </div>
         <div className="text-right">
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Max Link Speed</p>
@@ -12,8 +20,8 @@ export default function BandwidthCard() {
         </div>
       </div>
       <div className="w-full h-4 bg-slate-900 rounded-full overflow-hidden flex">
-        <div className="h-full bg-[#256af4]" style={{ width: '42.8%' }}></div>
-        <div className="h-full bg-[#256af4]/20" style={{ width: '15%' }}></div>
+        <div className="h-full bg-[#256af4]" style={{ width: barPrimary }}></div>
+        <div className="h-full bg-[#256af4]/20" style={{ width: barSecondary }}></div>
       </div>
       <div className="flex justify-between mt-3">
         <div className="flex items-center gap-2">

@@ -31,6 +31,11 @@ export function useMetricsWebSocket() {
   const [swapOutHistory, setSwapOutHistory] = useState([]);
   const [networkConnectionMetrics, setNetworkConnectionMetrics] = useState(null);
   const [networkErrorMetrics, setNetworkErrorMetrics] = useState(null);
+  const [networkTrafficMetrics, setNetworkTrafficMetrics] = useState(null);
+  const [trafficSendBytesHistory, setTrafficSendBytesHistory] = useState([]);
+  const [trafficRecvBytesHistory, setTrafficRecvBytesHistory] = useState([]);
+  const [trafficSendPpsHistory, setTrafficSendPpsHistory] = useState([]);
+  const [trafficRecvPpsHistory, setTrafficRecvPpsHistory] = useState([]);
   const [connectionTrendsHistory, setConnectionTrendsHistory] = useState([]);
   const [activityAndFailuresHistory, setActivityAndFailuresHistory] = useState([]);
   const [connected, setConnected] = useState(false);
@@ -228,6 +233,24 @@ export function useMetricsWebSocket() {
                 });
               }
               break;
+            case 'network_traffic_metrics':
+              setNetworkTrafficMetrics(event);
+              {
+                const sanitize = (r) => {
+                  if (r == null || !Number.isFinite(r)) return 0;
+                  return Math.min(Math.max(0, r), 1e9);
+                };
+                const i = trafficIndexRef.current++;
+                const sb = sanitize(data.send_rate_bytes_per_sec);
+                const rb = sanitize(data.receive_rate_bytes_per_sec);
+                const sp = sanitize(data.send_rate_packets_per_sec);
+                const rp = sanitize(data.receive_rate_packets_per_sec);
+                setTrafficSendBytesHistory((p) => [...p.slice(-(MAX_BUFFER - 1)), { index: i, value: sb }]);
+                setTrafficRecvBytesHistory((p) => [...p.slice(-(MAX_BUFFER - 1)), { index: i, value: rb }]);
+                setTrafficSendPpsHistory((p) => [...p.slice(-(MAX_BUFFER - 1)), { index: i, value: sp }]);
+                setTrafficRecvPpsHistory((p) => [...p.slice(-(MAX_BUFFER - 1)), { index: i, value: rp }]);
+              }
+              break;
             default:
               break;
           }
@@ -278,6 +301,11 @@ export function useMetricsWebSocket() {
     diskQueueHistory,
     networkConnectionMetrics,
     networkErrorMetrics,
+    networkTrafficMetrics,
+    trafficSendBytesHistory,
+    trafficRecvBytesHistory,
+    trafficSendPpsHistory,
+    trafficRecvPpsHistory,
     connectionTrendsHistory,
     activityAndFailuresHistory,
     connected,

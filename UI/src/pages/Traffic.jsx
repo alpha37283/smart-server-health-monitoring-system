@@ -1,92 +1,165 @@
-'use client'
+import React from 'react';
+import { useMetrics } from '../context/MetricsContext';
+import MetricCard from '../components/Traffic/MetricCard';
+import ChartCard from '../components/Traffic/ChartCard';
+import PacketCard from '../components/Traffic/PacketCard';
+import BandwidthCard from '../components/Traffic/BandwidthCard';
 
-import { useState } from 'react'
-import Sidebar from '@/components/Sidebar'
-import Header from '@/components/Header'
-import MetricCard from '@/components/MetricCard'
-import ChartCard from '@/components/ChartCard'
-import PacketCard from '@/components/PacketCard'
-import BandwidthCard from '@/components/BandwidthCard'
+const BYTES_PER_GB = 1024 ** 3;
+const BYTES_PER_MB = 1024 ** 2;
 
-export default function TrafficAnalysis() {
-  const [activeSidebar, setActiveSidebar] = useState('traffic')
+function formatGbFromBytes(bytes) {
+  if (bytes == null || !Number.isFinite(bytes)) return '—';
+  return (bytes / BYTES_PER_GB).toFixed(2);
+}
+
+function formatPacketsTotal(n) {
+  if (n == null || !Number.isFinite(n)) return '—';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}`;
+  if (n >= 1_000) return `${Math.round(n / 1_000)}`;
+  return String(Math.round(n));
+}
+
+function formatPacketsUnit(n) {
+  if (n == null || !Number.isFinite(n)) return '';
+  if (n >= 1_000_000) return 'M';
+  if (n >= 1_000) return 'K';
+  return '';
+}
+
+function formatRateMbPerSec(bytesPerSec) {
+  if (bytesPerSec == null || !Number.isFinite(bytesPerSec)) return '—';
+  const mb = bytesPerSec / BYTES_PER_MB;
+  const safe = Math.min(mb, 1e6);
+  return safe.toFixed(2);
+}
+
+function formatPps(pps) {
+  if (pps == null || !Number.isFinite(pps)) return '—';
+  const safe = Math.min(pps, 1e9);
+  return safe.toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
+function historyToChartPath(history) {
+  if (!history || history.length === 0) {
+    return 'M0 50 L 400 50';
+  }
+  const values = history.map((p) => p.value);
+  const maxV = Math.max(...values, 1e-9);
+  const n = history.length;
+  const step = 400 / Math.max(n - 1, 1);
+  return history
+    .map((p, i) => {
+      const x = i * step;
+      const y = 100 - (p.value / maxV) * 90 - 5;
+      return i === 0 ? `M${x},${y}` : `L${x},${y}`;
+    })
+    .join(' ');
+}
+
+export default function Traffic() {
+  const {
+    networkTrafficMetrics,
+    trafficSendBytesHistory,
+    trafficRecvBytesHistory,
+    trafficSendPpsHistory,
+    trafficRecvPpsHistory,
+  } = useMetrics();
+
+  const d = networkTrafficMetrics?.data ?? {};
+
+  const bytesSentGb = formatGbFromBytes(d.bytes_sent);
+  const bytesRecvGb = formatGbFromBytes(d.bytes_received);
+  const pktSent = d.packets_sent;
+  const pktRecv = d.packets_received;
+
+  const sendMb = formatRateMbPerSec(d.send_rate_bytes_per_sec);
+  const recvMb = formatRateMbPerSec(d.receive_rate_bytes_per_sec);
+
+  const sendPps = formatPps(d.send_rate_packets_per_sec);
+  const recvPps = formatPps(d.receive_rate_packets_per_sec);
+
+  const pathSendBytes = historyToChartPath(trafficSendBytesHistory);
+  const pathRecvBytes = historyToChartPath(trafficRecvBytesHistory);
+  const pathSendPps = historyToChartPath(trafficSendPpsHistory);
+  const pathRecvPps = historyToChartPath(trafficRecvPpsHistory);
 
   return (
-    <div className="flex h-screen bg-[#101622]">
-      <Sidebar activeSidebar={activeSidebar} setActiveSidebar={setActiveSidebar} />
-
-      {/* Main Content */}
-      <div className="ml-64 w-full">
-        <Header />
-
-        {/* Main Content Area */}
-        <main className="p-8 min-h-[calc(100vh-64px)] overflow-y-auto">
-          <div className="max-w-[1400px] mx-auto space-y-6">
-            {/* Row 1: Metric Cards */}
-            <div className="grid grid-cols-4 gap-6">
-              <MetricCard label="Bytes Sent" value="1.42" unit="GB" trend="+12% vs. PREV HOUR" trendColor="text-emerald-500" trendIcon="trending_up" />
-              <MetricCard label="Bytes Received" value="8.65" unit="GB" trend="STABLE FLOW" trendColor="text-slate-500" trendIcon="horizontal_rule" />
-              <MetricCard label="Packets Sent" value="124" unit="K" trend="-4% DROPPED" trendColor="text-red-500" trendIcon="trending_down" />
-              <MetricCard label="Packets Received" value="942" unit="K" trend="99.9% INTEGRITY" trendColor="text-emerald-500" trendIcon="check_circle" />
-            </div>
-
-            {/* Row 2: Send/Receive Rate (Bytes) */}
-            <div className="grid grid-cols-2 gap-6">
-              <ChartCard 
-                title="Send Rate (Bytes/sec)" 
-                value="2.4" 
-                unit="MB/s"
-                unitToggle="MB/S"
-                chartPath="M0 80 Q 50 75, 100 85 T 200 60 T 300 70 T 400 30" 
-              />
-              <ChartCard 
-                title="Receive Rate (Bytes/sec)" 
-                value="14.8" 
-                unit="MB/s"
-                unitToggle="MB/S"
-                chartPath="M0 40 Q 50 45, 100 30 T 200 70 T 300 50 T 400 10" 
-              />
-            </div>
-
-            {/* Row 3: Send/Receive Rate (Packets) */}
-            <div className="grid grid-cols-2 gap-6">
-              <PacketCard 
-                title="Send Rate (Packets/sec)" 
-                value="412" 
-                unit="PPS"
-                icon="outbox"
-                chartPath="M0 60 L 20 65 L 40 50 L 60 70 L 80 55 L 100 62 L 120 45 L 140 58 L 160 30 L 180 40 L 200 35 L 220 50 L 240 45 L 260 55 L 280 40 L 300 30 L 320 25 L 340 35 L 360 40 L 380 30 L 400 35" 
-              />
-              <PacketCard 
-                title="Receive Rate (Packets/sec)" 
-                value="2,108" 
-                unit="PPS"
-                icon="inbox"
-                chartPath="M0 80 L 20 75 L 40 85 L 60 70 L 80 65 L 100 72 L 120 65 L 140 78 L 160 50 L 180 60 L 200 55 L 220 70 L 240 65 L 260 75 L 280 60 L 300 50 L 320 45 L 340 55 L 360 60 L 380 50 L 400 55" 
-              />
-            </div>
-
-            {/* Row 4: Bandwidth Utilization */}
-            <BandwidthCard />
+    <div className="flex-1 overflow-y-auto bg-[#101622]">
+      <div className="p-8 min-h-[calc(100vh-64px)]">
+        <div className="max-w-[1400px] mx-auto space-y-6">
+          <div className="grid grid-cols-4 gap-6">
+            <MetricCard
+              label="Bytes Sent"
+              value={bytesSentGb}
+              unit="GB"
+              trend="LIVE"
+              trendColor="text-emerald-500"
+              trendIcon="check_circle"
+            />
+            <MetricCard
+              label="Bytes Received"
+              value={bytesRecvGb}
+              unit="GB"
+              trend="LIVE"
+              trendColor="text-emerald-500"
+              trendIcon="check_circle"
+            />
+            <MetricCard
+              label="Packets Sent"
+              value={formatPacketsTotal(pktSent)}
+              unit={formatPacketsUnit(pktSent) ? `${formatPacketsUnit(pktSent)}` : ''}
+              trend="LIVE"
+              trendColor="text-emerald-500"
+              trendIcon="check_circle"
+            />
+            <MetricCard
+              label="Packets Received"
+              value={formatPacketsTotal(pktRecv)}
+              unit={formatPacketsUnit(pktRecv) ? `${formatPacketsUnit(pktRecv)}` : ''}
+              trend="LIVE"
+              trendColor="text-emerald-500"
+              trendIcon="check_circle"
+            />
           </div>
-        </main>
-      </div>
 
-      <style jsx>{`
-        ::-webkit-scrollbar {
-          width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-          background: #101622;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: #334155;
-          border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: #475569;
-        }
-      `}</style>
+          <div className="grid grid-cols-2 gap-6">
+            <ChartCard
+              title="Send Rate (Bytes/sec)"
+              value={sendMb}
+              unit="MB/s"
+              unitToggle="MB/S"
+              chartPath={pathSendBytes}
+            />
+            <ChartCard
+              title="Receive Rate (Bytes/sec)"
+              value={recvMb}
+              unit="MB/s"
+              unitToggle="MB/S"
+              chartPath={pathRecvBytes}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <PacketCard
+              title="Send Rate (Packets/sec)"
+              value={sendPps}
+              unit="PPS"
+              icon="outbox"
+              chartPath={pathSendPps}
+            />
+            <PacketCard
+              title="Receive Rate (Packets/sec)"
+              value={recvPps}
+              unit="PPS"
+              icon="inbox"
+              chartPath={pathRecvPps}
+            />
+          </div>
+
+          <BandwidthCard utilizationPercent={d.bandwidth_utilization_percent} />
+        </div>
+      </div>
     </div>
-  )
+  );
 }
