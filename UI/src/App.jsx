@@ -7,6 +7,7 @@ import Disk from './pages/Disk';
 import Processes from './pages/Processes';
 import Connections from './pages/Connections';
 import Traffic from './pages/Traffic';
+import Latency from './pages/Latency';
 
 export default function App() {
   const [activeNav, setActiveNav] = useState('CPU');
@@ -36,6 +37,8 @@ export default function App() {
           {activeNav === 'Connections' && <Connections />}
 
           {activeNav === 'TrafficAnalysis' && <Traffic />}
+
+          {activeNav === 'Latency' && <Latency />}
         </main>
       </div>
     </div>
