@@ -6,8 +6,6 @@ import PacketCard from '../components/Traffic/PacketCard';
 import BandwidthCard from '../components/Traffic/BandwidthCard';
 
 const BYTES_PER_GB = 1024 ** 3;
-const BYTES_PER_MB = 1024 ** 2;
-
 function formatGbFromBytes(bytes) {
   if (bytes == null || !Number.isFinite(bytes)) return '—';
   return (bytes / BYTES_PER_GB).toFixed(2);
@@ -25,13 +23,6 @@ function formatPacketsUnit(n) {
   if (n >= 1_000_000) return 'M';
   if (n >= 1_000) return 'K';
   return '';
-}
-
-function formatRateMbPerSec(bytesPerSec) {
-  if (bytesPerSec == null || !Number.isFinite(bytesPerSec)) return '—';
-  const mb = bytesPerSec / BYTES_PER_MB;
-  const safe = Math.min(mb, 1e6);
-  return safe.toFixed(2);
 }
 
 function formatPps(pps) {
@@ -73,14 +64,9 @@ export default function Traffic() {
   const pktSent = d.packets_sent;
   const pktRecv = d.packets_received;
 
-  const sendMb = formatRateMbPerSec(d.send_rate_bytes_per_sec);
-  const recvMb = formatRateMbPerSec(d.receive_rate_bytes_per_sec);
-
   const sendPps = formatPps(d.send_rate_packets_per_sec);
   const recvPps = formatPps(d.receive_rate_packets_per_sec);
 
-  const pathSendBytes = historyToChartPath(trafficSendBytesHistory);
-  const pathRecvBytes = historyToChartPath(trafficRecvBytesHistory);
   const pathSendPps = historyToChartPath(trafficSendPpsHistory);
   const pathRecvPps = historyToChartPath(trafficRecvPpsHistory);
 
@@ -126,17 +112,13 @@ export default function Traffic() {
           <div className="grid grid-cols-2 gap-6">
             <ChartCard
               title="Send Rate (Bytes/sec)"
-              value={sendMb}
-              unit="MB/s"
-              unitToggle="MB/S"
-              chartPath={pathSendBytes}
+              rateBytesPerSec={d.send_rate_bytes_per_sec}
+              rateHistory={trafficSendBytesHistory}
             />
             <ChartCard
               title="Receive Rate (Bytes/sec)"
-              value={recvMb}
-              unit="MB/s"
-              unitToggle="MB/S"
-              chartPath={pathRecvBytes}
+              rateBytesPerSec={d.receive_rate_bytes_per_sec}
+              rateHistory={trafficRecvBytesHistory}
             />
           </div>
 
