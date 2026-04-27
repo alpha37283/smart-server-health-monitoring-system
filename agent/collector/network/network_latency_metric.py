@@ -138,8 +138,6 @@ async def collect_latency_metrics(event_bus):
     data = await asyncio.to_thread(get_latency_metrics)
 
     latency_stats = get_latency_stats(data["latency_per_target"])
-    rtt_stats = get_latency_stats(data["rtt_per_target"])
-    handshake_stats = get_latency_stats(data["handshake_per_target"])
 
     event = {
         "timestamp": time.time(),
@@ -151,8 +149,8 @@ async def collect_latency_metrics(event_bus):
             "min_latency_ms": latency_stats["min"],
             "max_latency_ms": latency_stats["max"],
 
-            "packet_round_trip_time": rtt_stats["average"],
-            "connection_handshake_time": handshake_stats["average"]
+            "packet_round_trip_time": get_average_rtt(data["rtt_per_target"]),
+            "connection_handshake_time": get_average_handshake(data["handshake_per_target"]),
         }
     }
 

@@ -1,46 +1,18 @@
-export default function LatencyTable() {
-  const targets = [
-    {
-      name: 'edge-us-east-01',
-      ip: '104.22.14.221',
-      icon: 'public',
-      latency: '14.2ms',
-      latencyColor: 'text-emerald-500',
-      handshake: '210ms',
-      status: 'HEALTHY',
-      statusColor: 'bg-emerald-500/20 text-emerald-500'
-    },
-    {
-      name: 'aws-internal-vpc',
-      ip: '172.31.42.10',
-      icon: 'cloud',
-      latency: '2.1ms',
-      latencyColor: 'text-emerald-500',
-      handshake: '42ms',
-      status: 'HEALTHY',
-      statusColor: 'bg-emerald-500/20 text-emerald-500'
-    },
-    {
-      name: 'cdn-pop-frankfurt',
-      ip: '185.11.124.8',
-      icon: 'router',
-      latency: '312.4ms',
-      latencyColor: 'text-red-500',
-      handshake: '--',
-      status: 'UNREACHABLE',
-      statusColor: 'bg-red-500/20 text-red-500'
-    },
-    {
-      name: 'db-master-replica-01',
-      ip: '10.0.4.52',
-      icon: 'storage',
-      latency: '0.8ms',
-      latencyColor: 'text-emerald-500',
-      handshake: '12ms',
-      status: 'HEALTHY',
-      statusColor: 'bg-emerald-500/20 text-emerald-500'
-    }
-  ]
+const PLACEHOLDER_ROW = [
+  {
+    name: 'Waiting for metrics',
+    ip: '—',
+    icon: 'hourglass_empty',
+    latency: '—',
+    latencyColor: 'text-slate-500',
+    handshake: '—',
+    status: '—',
+    statusColor: 'bg-slate-500/20 text-slate-500',
+  },
+];
+
+export default function LatencyTable({ rows }) {
+  const targets = rows && rows.length > 0 ? rows : PLACEHOLDER_ROW;
 
   return (
     <div className="bg-[#1a2332] rounded-lg p-6">
@@ -92,5 +64,5 @@ export default function LatencyTable() {
         </table>
       </div>
     </div>
-  )
+  );
 }

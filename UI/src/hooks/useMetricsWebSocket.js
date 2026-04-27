@@ -38,11 +38,16 @@ export function useMetricsWebSocket() {
   const [trafficRecvPpsHistory, setTrafficRecvPpsHistory] = useState([]);
   const [connectionTrendsHistory, setConnectionTrendsHistory] = useState([]);
   const [activityAndFailuresHistory, setActivityAndFailuresHistory] = useState([]);
+  const [networkLatencyMetrics, setNetworkLatencyMetrics] = useState(null);
+  const [latencyAvgHistory, setLatencyAvgHistory] = useState([]);
+  const [latencyHandshakeHistory, setLatencyHandshakeHistory] = useState([]);
   const [connected, setConnected] = useState(false);
   const [networkConnected, setNetworkConnected] = useState(false);
   const [error, setError] = useState(null);
 
   const indexRef = useRef(0);
+  const trafficIndexRef = useRef(0);
+  const latencyIndexRef = useRef(0);
   const memIndexRef = useRef(0);
   const memPrevRef = useRef({ swapInGb: null, swapOutGb: null, timestamp: null });
   const diskPrevRef = useRef({ readCount: null, writeCount: null, timestamp: null });
@@ -251,6 +256,20 @@ export function useMetricsWebSocket() {
                 setTrafficRecvPpsHistory((p) => [...p.slice(-(MAX_BUFFER - 1)), { index: i, value: rp }]);
               }
               break;
+            case 'network_latency_metrics':
+              setNetworkLatencyMetrics(event);
+              {
+                const i = latencyIndexRef.current++;
+                const avg = data.average_latency_ms;
+                const hs = data.connection_handshake_time;
+                if (avg != null && Number.isFinite(avg)) {
+                  setLatencyAvgHistory((p) => [...p.slice(-(MAX_BUFFER - 1)), { index: i, value: avg }]);
+                }
+                if (hs != null && Number.isFinite(hs)) {
+                  setLatencyHandshakeHistory((p) => [...p.slice(-(MAX_BUFFER - 1)), { index: i, value: hs }]);
+                }
+              }
+              break;
             default:
               break;
           }
@@ -308,6 +327,9 @@ export function useMetricsWebSocket() {
     trafficRecvPpsHistory,
     connectionTrendsHistory,
     activityAndFailuresHistory,
+    networkLatencyMetrics,
+    latencyAvgHistory,
+    latencyHandshakeHistory,
     connected,
     networkConnected,
     error,
