@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Shield, FileText, Grid3X3, Network, HardDrive, Zap, ChevronDown, Wifi, BarChart3, Timer } from 'lucide-react';
+import { Settings, Shield, FileText, Grid3X3, Network, HardDrive, Zap, ChevronDown, Wifi, BarChart3, Timer, AlertTriangle } from 'lucide-react';
 
 export default function Sidebar({ activeNav, setActiveNav }) {
   const [expandedGroups, setExpandedGroups] = useState({ System: true, Network: false });
@@ -22,6 +22,7 @@ export default function Sidebar({ activeNav, setActiveNav }) {
     { id: 'Connections', label: 'Connections', icon: Wifi },
     { id: 'TrafficAnalysis', label: 'Traffic Analysis', icon: BarChart3 },
     { id: 'Latency', label: 'Latency', icon: Timer },
+    { id: 'ErrorDrop', label: 'Error & Drop', icon: AlertTriangle },
   ];
 
   const mainItems = [

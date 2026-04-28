@@ -8,6 +8,7 @@ import Processes from './pages/Processes';
 import Connections from './pages/Connections';
 import Traffic from './pages/Traffic';
 import Latency from './pages/Latency';
+import ErrorDrop from './pages/ErrorDrop';
 
 export default function App() {
   const [activeNav, setActiveNav] = useState('CPU');
@@ -39,6 +40,8 @@ export default function App() {
           {activeNav === 'TrafficAnalysis' && <Traffic />}
 
           {activeNav === 'Latency' && <Latency />}
+
+          {activeNav === 'ErrorDrop' && <ErrorDrop />}
         </main>
       </div>
     </div>
