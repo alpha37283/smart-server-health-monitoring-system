@@ -30,10 +30,10 @@ def error_drop_rates_per_second():
         _prev_timestamp = current_time
 
         return {
-            "packet_errors_in_per_sec": None,
-            "packet_errors_out_per_sec": None,
-            "packet_drops_in_per_sec": None,
-            "packet_drops_out_per_sec": None,
+            "packet_errors_in_per_sec": 0.0,
+            "packet_errors_out_per_sec": 0.0,
+            "packet_drops_in_per_sec": 0.0,
+            "packet_drops_out_per_sec": 0.0,
         }
 
     time_diff = current_time - _prev_timestamp
@@ -52,20 +52,21 @@ def error_drop_rates_per_second():
     _prev_timestamp = current_time
 
     if time_diff <= 0:
-        return None
+        return {
+            "packet_errors_in_per_sec": 0.0,
+            "packet_errors_out_per_sec": 0.0,
+            "packet_drops_in_per_sec": 0.0,
+            "packet_drops_out_per_sec": 0.0,
+        }
 
     def safe_rate(diff):
-        return None if diff < 0 else diff / time_diff
+        return 0.0 if diff < 0 else diff / time_diff
 
     return {
         "packet_errors_in_per_sec": safe_rate(diff_errin),
         "packet_errors_out_per_sec": safe_rate(diff_errout),
         "packet_drops_in_per_sec": safe_rate(diff_dropin),
         "packet_drops_out_per_sec": safe_rate(diff_dropout),
-        "total_error_rate" : None,
-        "error_per_sec" : None,
-        "total_drop_rate" : None,
-        "drop_per_sec" : None
     }
 
 def aggregate_error_drop_rates(rates):
@@ -79,9 +80,7 @@ def aggregate_error_drop_rates(rates):
     drop_out = rates.get("packet_drops_out_per_sec")
 
     def safe_sum(a, b):
-        if a is None or b is None:
-            return None
-        return a + b
+        return (a or 0.0) + (b or 0.0)
 
     error_rate = safe_sum(err_in, err_out)
     drop_rate = safe_sum(drop_in, drop_out)
