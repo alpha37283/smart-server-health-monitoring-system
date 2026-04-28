@@ -1,4 +1,10 @@
-export default function ErrorDropBreakdown() {
+export default function ErrorDropBreakdown({
+  rxErrors = 0,
+  rxDrops = 0,
+  txErrors = 0,
+  txDrops = 0,
+}) {
+  const toPct = (n) => `${Math.max(0, Math.min(100, n))}%`;
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Input Errors & Drops (RX) */}
@@ -14,16 +20,16 @@ export default function ErrorDropBreakdown() {
           <div className="grid grid-cols-2 gap-8">
             <div>
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Total Errors</label>
-              <div className="text-3xl font-bold text-slate-100">1.4k</div>
+              <div className="text-3xl font-bold text-slate-100">{Number(rxErrors).toFixed(2)}</div>
               <div className="w-full bg-[#1e2638] h-1 mt-4">
-                <div className="bg-red-500 w-[45%] h-full"></div>
+                <div className="bg-red-500 h-full" style={{ width: toPct(rxErrors * 10) }}></div>
               </div>
             </div>
             <div>
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Total Drops</label>
-              <div className="text-3xl font-bold text-slate-100">412</div>
+              <div className="text-3xl font-bold text-slate-100">{Number(rxDrops).toFixed(2)}</div>
               <div className="w-full bg-[#1e2638] h-1 mt-4">
-                <div className="bg-amber-500 w-[15%] h-full"></div>
+                <div className="bg-amber-500 h-full" style={{ width: toPct(rxDrops * 10) }}></div>
               </div>
             </div>
           </div>
@@ -57,16 +63,16 @@ export default function ErrorDropBreakdown() {
           <div className="grid grid-cols-2 gap-8">
             <div>
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Total Errors</label>
-              <div className="text-3xl font-bold text-slate-100">0</div>
+              <div className="text-3xl font-bold text-slate-100">{Number(txErrors).toFixed(2)}</div>
               <div className="w-full bg-[#1e2638] h-1 mt-4">
-                <div className="bg-[#256af4] w-0 h-full"></div>
+                <div className="bg-[#256af4] h-full" style={{ width: toPct(txErrors * 10) }}></div>
               </div>
             </div>
             <div>
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Total Drops</label>
-              <div className="text-3xl font-bold text-slate-100">12</div>
+              <div className="text-3xl font-bold text-slate-100">{Number(txDrops).toFixed(2)}</div>
               <div className="w-full bg-[#1e2638] h-1 mt-4">
-                <div className="bg-slate-600 w-[5%] h-full"></div>
+                <div className="bg-slate-600 h-full" style={{ width: toPct(txDrops * 10) }}></div>
               </div>
             </div>
           </div>

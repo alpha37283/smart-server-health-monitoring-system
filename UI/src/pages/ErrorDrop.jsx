@@ -3,6 +3,7 @@ import ErrorDropBreakdown from '../components/ErrorDrop/ErrorDropBreakdown';
 import ErrorDropMetricCard from '../components/ErrorDrop/ErrorDropMetricCard';
 import ErrorDropTrends from '../components/ErrorDrop/ErrorDropTrends';
 import RecentIncidentsTable from '../components/ErrorDrop/RecentIncidentsTable';
+import { useMetrics } from '../context/MetricsContext';
 
 const metricCards = [
   {
@@ -43,7 +44,16 @@ const metricCards = [
   },
 ];
 
+function fmt(n, digits = 2) {
+  if (n == null || !Number.isFinite(n)) return '0';
+  return Number(n).toFixed(digits);
+}
+
 export default function ErrorDrop() {
+  const { networkErrorMetrics, networkErrorHistory } = useMetrics();
+  const d = networkErrorMetrics?.data ?? {};
+  const totalPacketLoss = (Number(d.error_rate || 0) + Number(d.drop_rate || 0)).toFixed(2);
+  const healthyPct = Math.max(0, 100 - Number(totalPacketLoss)).toFixed(2);
   return (
     <div className="flex-1 overflow-y-auto bg-[#101622]">
       <div className="p-8 min-h-[calc(100vh-64px)] overflow-y-auto">
@@ -65,28 +75,45 @@ export default function ErrorDrop() {
 
           {/* Row 1: Summary Cards */}
           <div className="grid grid-cols-4 gap-6 mb-6">
-            {metricCards.map((card) => (
+            {metricCards.map((card) => {
+              const dynamicCard =
+                card.label === 'Total Packet Loss'
+                  ? { ...card, value: totalPacketLoss, trend: 'LIVE RATE' }
+                  : card.label === 'Healthy Packets'
+                    ? { ...card, value: healthyPct, trend: 'LIVE RATE' }
+                    : card.label === 'RX Errors'
+                      ? { ...card, value: fmt(d.packet_errors_in_per_sec), trend: 'PER SECOND' }
+                      : card.label === 'TX Drops'
+                        ? { ...card, value: fmt(d.packet_drops_out_per_sec), trend: 'PER SECOND' }
+                        : card;
+              return (
               <ErrorDropMetricCard
                 key={card.label}
-                label={card.label}
-                value={card.value}
-                unit={card.unit}
-                trend={card.trend}
-                trendColor={card.trendColor}
-                trendIcon={card.trendIcon}
-                borderColor={card.borderColor}
+                label={dynamicCard.label}
+                value={dynamicCard.value}
+                unit={dynamicCard.unit}
+                trend={dynamicCard.trend}
+                trendColor={dynamicCard.trendColor}
+                trendIcon={dynamicCard.trendIcon}
+                borderColor={dynamicCard.borderColor}
               />
-            ))}
+              );
+            })}
           </div>
 
           {/* Row 2: Breakdown Metrics */}
           <div className="mb-6">
-            <ErrorDropBreakdown />
+            <ErrorDropBreakdown
+              rxErrors={d.packet_errors_in_per_sec || 0}
+              rxDrops={d.packet_drops_in_per_sec || 0}
+              txErrors={d.packet_errors_out_per_sec || 0}
+              txDrops={d.packet_drops_out_per_sec || 0}
+            />
           </div>
 
           {/* Row 3: Trends Chart */}
           <div className="mb-6">
-            <ErrorDropTrends />
+            <ErrorDropTrends history={networkErrorHistory} />
           </div>
 
           {/* Row 4: Recent Incidents Table */}

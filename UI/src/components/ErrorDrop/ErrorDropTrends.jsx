@@ -1,4 +1,28 @@
-export default function ErrorDropTrends() {
+function buildPath(history, key, fallbackPath) {
+  if (!history || history.length < 2) return fallbackPath;
+  const maxV = Math.max(...history.map((p) => Number(p[key] || 0)), 1);
+  const n = history.length;
+  const step = 1000 / Math.max(1, n - 1);
+  return history
+    .map((p, i) => {
+      const x = i * step;
+      const y = 200 - ((Number(p[key] || 0) / maxV) * 170 + 10);
+      return `${i === 0 ? 'M' : 'L'}${x},${y}`;
+    })
+    .join(' ');
+}
+
+export default function ErrorDropTrends({ history = [] }) {
+  const inputErrPath = buildPath(
+    history,
+    'errorsIn',
+    'M0,80 Q100,60 200,90 T400,40 T600,100 T800,30 T1000,70'
+  );
+  const inputDropPath = buildPath(
+    history,
+    'dropsIn',
+    'M0,150 Q100,140 200,160 T400,130 T600,170 T800,120 T1000,150'
+  );
   return (
     <div className="bg-[#141b2a] border border-slate-800 rounded-xl overflow-hidden">
       <div className="bg-[#1a2332] px-6 py-4 flex justify-between items-center border-b border-slate-800">
@@ -25,9 +49,9 @@ export default function ErrorDropTrends() {
             {/* Background Fill */}
             <path d="M0,80 Q100,60 200,90 T400,40 T600,100 T800,30 T1000,70 L1000,200 L0,200 Z" fill="rgba(37, 106, 244, 0.1)"></path>
             {/* Input Errors Line (Blue Solid) */}
-            <path d="M0,80 Q100,60 200,90 T400,40 T600,100 T800,30 T1000,70" fill="none" stroke="#256af4" strokeWidth="2"></path>
+            <path d={inputErrPath} fill="none" stroke="#256af4" strokeWidth="2"></path>
             {/* Input Drops Line (Red Dashed) */}
-            <path d="M0,150 Q100,140 200,160 T400,130 T600,170 T800,120 T1000,150" fill="none" stroke="#ef4444" strokeDasharray="4,2" strokeWidth="2"></path>
+            <path d={inputDropPath} fill="none" stroke="#ef4444" strokeDasharray="4,2" strokeWidth="2"></path>
           </svg>
           {/* Grid Lines */}
           <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">

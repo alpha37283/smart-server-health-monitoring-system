@@ -32,6 +32,7 @@ export function useMetricsWebSocket() {
   const [networkConnectionMetrics, setNetworkConnectionMetrics] = useState(null);
   const [networkErrorMetrics, setNetworkErrorMetrics] = useState(null);
   const [networkTrafficMetrics, setNetworkTrafficMetrics] = useState(null);
+  const [networkErrorHistory, setNetworkErrorHistory] = useState([]);
   const [trafficSendBytesHistory, setTrafficSendBytesHistory] = useState([]);
   const [trafficRecvBytesHistory, setTrafficRecvBytesHistory] = useState([]);
   const [trafficSendPpsHistory, setTrafficSendPpsHistory] = useState([]);
@@ -226,6 +227,27 @@ export function useMetricsWebSocket() {
               break;
             case 'network_error_metrics':
               setNetworkErrorMetrics(event);
+              {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('en-US', {
+                  hour12: false,
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                });
+                setNetworkErrorHistory((p) => [
+                  ...p.slice(-(MAX_BUFFER - 1)),
+                  {
+                    time: timeStr,
+                    errorsIn: data.packet_errors_in_per_sec || 0,
+                    errorsOut: data.packet_errors_out_per_sec || 0,
+                    dropsIn: data.packet_drops_in_per_sec || 0,
+                    dropsOut: data.packet_drops_out_per_sec || 0,
+                    errorRate: data.error_rate || 0,
+                    dropRate: data.drop_rate || 0,
+                  },
+                ]);
+              }
               if (data.drop_rate != null || data.error_rate != null) {
                 setActivityAndFailuresHistory((p) => {
                   if (p.length === 0) return p;
@@ -321,6 +343,7 @@ export function useMetricsWebSocket() {
     networkConnectionMetrics,
     networkErrorMetrics,
     networkTrafficMetrics,
+    networkErrorHistory,
     trafficSendBytesHistory,
     trafficRecvBytesHistory,
     trafficSendPpsHistory,
