@@ -1,10 +1,11 @@
-export default function TrafficThroughput() {
-  const data = [
-    { name: 'eth0', received: 90, sent: 40 },
-    { name: 'eth1', received: 15, sent: 30 },
-    { name: 'eth2', received: 2, sent: 2, disabled: true },
-    { name: 'wlan0', received: 12, sent: 5 },
-  ]
+const DEFAULT_DATA = [
+  { name: 'eth0', received: 90, sent: 40 },
+  { name: 'eth1', received: 15, sent: 30 },
+  { name: 'eth2', received: 2, sent: 2, disabled: true },
+  { name: 'wlan0', received: 12, sent: 5 },
+];
+
+export default function TrafficThroughput({ data = DEFAULT_DATA, maxPktLabel = '1.2 GB/s' }) {
 
   return (
     <div className="bg-[#151d2a] rounded-lg border border-slate-700 p-6">
@@ -55,7 +56,7 @@ export default function TrafficThroughput() {
           <span className="material-symbols-outlined text-xs align-middle mr-1">schedule</span>
           Last 60 Minutes
         </span>
-        <span className="text-[#256af4] font-bold font-mono">MAX_PKT: 1.2 GB/s</span>
+        <span className="text-[#256af4] font-bold font-mono">MAX_PKT: {maxPktLabel}</span>
       </div>
     </div>
   )

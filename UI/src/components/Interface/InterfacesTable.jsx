@@ -1,11 +1,11 @@
-export default function InterfacesTable() {
-  const interfaces = [
-    { name: 'eth0', desc: 'WAN_PRIMARY', status: 'UP', statusColor: 'emerald', speed: '1000 Mbps', mtu: 1500, bytesSent: '142.4 MB', bytesRecv: '894.2 MB', packets: '1.4M / 4.8M', utilization: 62.4 },
-    { name: 'eth1', desc: 'LAN_OFFICE', status: 'UP', statusColor: 'emerald', speed: '1000 Mbps', mtu: 1500, bytesSent: '32.1 MB', bytesRecv: '14.8 MB', packets: '342K / 189K', utilization: 12.1 },
-    { name: 'eth2', desc: 'DMZ_SERVER', status: 'DOWN', statusColor: 'red', speed: '0 Mbps', mtu: 1500, bytesSent: '0 KB', bytesRecv: '0 KB', packets: '0 / 0', utilization: 0.0 },
-    { name: 'wlan0', desc: 'WIFI_GUEST', status: 'UP', statusColor: 'emerald', speed: '450 Mbps', mtu: 1500, bytesSent: '892 KB', bytesRecv: '4.1 MB', packets: '12K / 45K', utilization: 4.2 },
-  ]
+const DEFAULT_INTERFACES = [
+  { name: 'eth0', desc: 'WAN_PRIMARY', status: 'UP', statusColor: 'emerald', speed: '1000 Mbps', mtu: 1500, bytesSent: '142.4 MB', bytesRecv: '894.2 MB', packets: '1.4M / 4.8M', utilization: 62.4, utilizationDisplay: '62.4%' },
+  { name: 'eth1', desc: 'LAN_OFFICE', status: 'UP', statusColor: 'emerald', speed: '1000 Mbps', mtu: 1500, bytesSent: '32.1 MB', bytesRecv: '14.8 MB', packets: '342K / 189K', utilization: 12.1, utilizationDisplay: '12.1%' },
+  { name: 'eth2', desc: 'DMZ_SERVER', status: 'DOWN', statusColor: 'red', speed: '0 Mbps', mtu: 1500, bytesSent: '0 KB', bytesRecv: '0 KB', packets: '0 / 0', utilization: 0.0, utilizationDisplay: '0.0%' },
+  { name: 'wlan0', desc: 'WIFI_GUEST', status: 'UP', statusColor: 'emerald', speed: '450 Mbps', mtu: 1500, bytesSent: '892 KB', bytesRecv: '4.1 MB', packets: '12K / 45K', utilization: 4.2, utilizationDisplay: '4.2%' },
+];
 
+export default function InterfacesTable({ interfaces = DEFAULT_INTERFACES }) {
   const getStatusColor = (color) => {
     return color === 'emerald' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'
   }
@@ -62,7 +62,7 @@ export default function InterfacesTable() {
                 <td className="px-6 py-4 text-right font-mono text-slate-300 text-sm">{iface.packets}</td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <span className="text-[11px] font-bold text-[#256af4]">{iface.utilization}%</span>
+                    <span className="text-[11px] font-bold text-[#256af4]">{iface.utilizationDisplay || `${iface.utilization}%`}</span>
                     <div className="w-16 h-1.5 bg-slate-700 rounded-full overflow-hidden">
                       <div className="bg-[#256af4] h-full" style={{ width: `${iface.utilization}%` }}></div>
                     </div>
