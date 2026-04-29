@@ -7,6 +7,7 @@ import Disk from './pages/Disk';
 import Processes from './pages/Processes';
 import Connections from './pages/Connections';
 import Traffic from './pages/Traffic';
+import Interfaces from './pages/Interfaces';
 import Latency from './pages/Latency';
 import Ports from './pages/Ports';
 import ErrorDrop from './pages/ErrorDrop';
@@ -39,6 +40,8 @@ export default function App() {
           {activeNav === 'Connections' && <Connections />}
 
           {activeNav === 'TrafficAnalysis' && <Traffic />}
+
+          {activeNav === 'Interfaces' && <Interfaces />}
 
           {activeNav === 'Latency' && <Latency />}
 
