@@ -22,6 +22,7 @@ export default function Sidebar({ activeNav, setActiveNav }) {
     { id: 'Connections', label: 'Connections', icon: Wifi },
     { id: 'TrafficAnalysis', label: 'Traffic Analysis', icon: BarChart3 },
     { id: 'Latency', label: 'Latency', icon: Timer },
+    { id: 'Ports', label: 'Ports', icon: Network },
     { id: 'ErrorDrop', label: 'Error & Drop', icon: AlertTriangle },
   ];
 

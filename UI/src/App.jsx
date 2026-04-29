@@ -8,6 +8,7 @@ import Processes from './pages/Processes';
 import Connections from './pages/Connections';
 import Traffic from './pages/Traffic';
 import Latency from './pages/Latency';
+import Ports from './pages/Ports';
 import ErrorDrop from './pages/ErrorDrop';
 
 export default function App() {
@@ -40,6 +41,8 @@ export default function App() {
           {activeNav === 'TrafficAnalysis' && <Traffic />}
 
           {activeNav === 'Latency' && <Latency />}
+
+          {activeNav === 'Ports' && <Ports />}
 
           {activeNav === 'ErrorDrop' && <ErrorDrop />}
         </main>
