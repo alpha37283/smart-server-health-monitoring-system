@@ -2,6 +2,8 @@
 
 import psutil
 import time
+import asyncio
+from agent.collector.network.process_network import get_connections_data
 
 
 
@@ -52,16 +54,18 @@ def get_top_processes_by_bandwidth(bandwidth_per_process, top_n=5):
 
 
 async def collect_process_network_usage(event_bus):
+    connections_per_process, network_process_list = await asyncio.to_thread(get_connections_data)
+    data = {
+        "connections_per_process": connections_per_process,
+        "network_process_list": network_process_list,
+    }
 
-    data = get_process_metrics()
-
-    top_connections = get_top_processes_by_connections(
-        data["connections_per_process"]
-    )
-
-    process_rates = get_process_connection_rate(
-        data["connections_per_process"]
-    )
+    # Top processes by open connection count
+    top_connections = sorted(
+        connections_per_process.values(),
+        key=lambda p: len(p.get("connections", [])),
+        reverse=True
+    )[:5]
 
     bandwidth_data = get_process_bandwidth_estimate(
         data["connections_per_process"]
@@ -77,11 +81,10 @@ async def collect_process_network_usage(event_bus):
         "data": {
             **data,
             "top_processes_by_connections": top_connections,
-            "process_connection_rate": process_rates,
             "top_processes_by_bandwidth": top_bandwidth
         }
     }
 
-    print("Process Network Data collected")
+    print("Process PORT Usage Data collected", event, " =======")
 
     await event_bus.publish(event)
