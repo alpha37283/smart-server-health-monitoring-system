@@ -30,6 +30,7 @@ export function useMetricsWebSocket() {
   const [swapInHistory, setSwapInHistory] = useState([]);
   const [swapOutHistory, setSwapOutHistory] = useState([]);
   const [networkConnectionMetrics, setNetworkConnectionMetrics] = useState(null);
+  const [networkProcessMetrics, setNetworkProcessMetrics] = useState(null);
   const [networkErrorMetrics, setNetworkErrorMetrics] = useState(null);
   const [networkTrafficMetrics, setNetworkTrafficMetrics] = useState(null);
   const [networkErrorHistory, setNetworkErrorHistory] = useState([]);
@@ -225,6 +226,9 @@ export function useMetricsWebSocket() {
                 });
               }
               break;
+            case 'network_process_metrics':
+              setNetworkProcessMetrics(event);
+              break;
             case 'network_error_metrics':
               setNetworkErrorMetrics(event);
               {
@@ -341,6 +345,7 @@ export function useMetricsWebSocket() {
     diskIoHistory,
     diskQueueHistory,
     networkConnectionMetrics,
+    networkProcessMetrics,
     networkErrorMetrics,
     networkTrafficMetrics,
     networkErrorHistory,

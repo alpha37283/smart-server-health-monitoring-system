@@ -1,13 +1,35 @@
 import React, { useState } from 'react'
+import { useMetrics } from '../../context/MetricsContext';
 
 export default function ProcessDetailsTable() {
   const [expandedRows, setExpandedRows] = useState({})
+  const { networkProcessMetrics } = useMetrics();
+  const byPid = networkProcessMetrics?.data?.connections_per_process ?? {};
+  const topBandwidth = networkProcessMetrics?.data?.top_processes_by_bandwidth ?? [];
+  const bwMap = Object.fromEntries(topBandwidth.map((p) => [p.pid, p.estimated_bandwidth]));
 
-  const processes = [
-    { name: 'nginx.worker', pid: 14201, totalConn: 8122, established: 7820, listen: 42, other: 260, bindPort: '80, 443', status: 'ACTIVE', throughput: '1.2 GB/s', errorRate: '0.002%' },
-    { name: 'postgresql.service', pid: 882, totalConn: 6431, established: 6100, listen: 1, other: 330, bindPort: '5432', status: 'ACTIVE', throughput: '850 MB/s', errorRate: '0.005%' },
-    { name: 'redis-server', pid: 1204, totalConn: 4209, established: 4150, listen: 1, other: 58, bindPort: '6379', status: 'ACTIVE', throughput: '450 MB/s', errorRate: '0.001%' },
-  ]
+  const processes = Object.values(byPid)
+    .map((p) => {
+      const conns = p.connections || [];
+      const established = conns.filter((c) => c.status === 'ESTABLISHED').length;
+      const listen = conns.filter((c) => c.status === 'LISTEN').length;
+      const bindPort = [...new Set(conns.map((c) => c.port))].slice(0, 4).join(', ') || '—';
+      const status = conns.length > 0 ? 'ACTIVE' : 'IDLE';
+      const throughputWeight = bwMap[p.pid] || 0;
+      return {
+        name: p.name,
+        pid: p.pid,
+        totalConn: conns.length,
+        established,
+        listen,
+        bindPort,
+        status,
+        throughput: `${throughputWeight}`,
+        errorRate: 'N/A',
+      };
+    })
+    .sort((a, b) => b.totalConn - a.totalConn)
+    .slice(0, 10);
 
   const toggleExpand = (idx) => {
     setExpandedRows(prev => ({
