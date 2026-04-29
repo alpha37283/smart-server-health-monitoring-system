@@ -42,6 +42,11 @@ export default function Sidebar({ activeSidebar, setActiveSidebar }) {
           </div>
         </div>
 
+        <button onClick={() => setActiveSidebar('interfaces')} className={`flex items-center gap-3 px-3 py-2 rounded text-sm font-medium w-full text-left transition-colors ${activeSidebar === 'interfaces' ? 'bg-[#256af4] text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
+              <span className="material-symbols-outlined text-sm">settings_ethernet</span>
+              Interface
+            </button>
+
 
         <button onClick={() => setActiveSidebar('errorDrop')} className={`flex items-center gap-3 px-3 py-2 rounded text-sm font-medium w-full text-left transition-colors ${activeSidebar === 'errorDrop' ? 'bg-[#256af4] text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
               <span className="material-symbols-outlined text-sm">error_outline</span>
