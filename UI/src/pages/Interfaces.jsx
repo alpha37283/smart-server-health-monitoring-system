@@ -22,11 +22,31 @@ function buildDesc(name) {
   return `IFACE_${String(name || 'UNKNOWN').toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`;
 }
 
+function formatMbpsFromBytesPerSec(bytesPerSec) {
+  if (!Number.isFinite(bytesPerSec) || bytesPerSec <= 0) return '0 Mbps';
+  const mbps = (bytesPerSec * 8) / 1_000_000;
+  return `${mbps.toFixed(2)} Mbps`;
+}
+
+function isVirtualInterface(name) {
+  const n = String(name || '').toLowerCase();
+  return (
+    n.startsWith('docker') ||
+    n.startsWith('br-') ||
+    n.startsWith('veth') ||
+    n.startsWith('virbr') ||
+    n.startsWith('vmnet') ||
+    n.startsWith('tun') ||
+    n.startsWith('tap')
+  );
+}
+
 export default function Interfaces() {
   const { networkInterfaceMetrics } = useMetrics();
   const liveInterfaces = networkInterfaceMetrics?.data?.interfaces || null;
   const [packetRates, setPacketRates] = useState({});
   const [byteRates, setByteRates] = useState({});
+  const [hideDownAndVirtual, setHideDownAndVirtual] = useState(true);
   const prevRef = useRef({ timestamp: null, counters: {} });
 
   useEffect(() => {
@@ -77,64 +97,74 @@ export default function Interfaces() {
       const utilizationRaw = iface.interface_utilization_percent;
       const isUtilizationValid = Number.isFinite(utilizationRaw);
       const utilization = isUtilizationValid ? Math.max(0, Math.min(100, utilizationRaw)) : 0;
+      const status = iface.interface_status || 'DOWN';
+      const isVirtual = isVirtualInterface(name);
+      const sendRateBps = iface.interface_send_rate_bytes_per_sec ?? byteRates[name]?.sent ?? 0;
+      const recvRateBps = iface.interface_receive_rate_bytes_per_sec ?? byteRates[name]?.recv ?? 0;
+      const totalRateBps = Math.max(0, sendRateBps + recvRateBps);
+      const reportedSpeedMbps = iface.interface_speed_mbps || 0;
+      const speedDisplay = reportedSpeedMbps > 0
+        ? `${reportedSpeedMbps} Mbps`
+        : (status === 'UP' ? formatMbpsFromBytesPerSec(totalRateBps) : '0 Mbps');
 
       return {
         name,
         desc: buildDesc(name),
-        status: iface.interface_status || 'DOWN',
-        statusColor: iface.interface_status === 'UP' ? 'emerald' : 'red',
-        speed: `${iface.interface_speed_mbps || 0} Mbps`,
+        status,
+        statusColor: status === 'UP' ? 'emerald' : 'red',
+        speed: speedDisplay,
         mtu: iface.mtu || 0,
         bytesSent: formatBytes(iface.interface_bytes_sent || 0),
         bytesRecv: formatBytes(iface.interface_bytes_received || 0),
         packets: `${formatCompact(iface.interface_packets_sent || 0)} / ${formatCompact(iface.interface_packets_received || 0)}`,
         utilization,
-        utilizationDisplay: isUtilizationValid ? `${utilization.toFixed(1)}%` : 'N/A',
-        disabled: (iface.interface_status || 'DOWN') !== 'UP',
+        utilizationDisplay: isUtilizationValid ? `${utilization.toFixed(1)}%` : null,
+        disabled: status !== 'UP',
+        isVirtual,
         recvRaw: iface.interface_bytes_received || 0,
         sentRaw: iface.interface_bytes_sent || 0,
-        recvRateRaw: byteRates[name]?.recv || 0,
-        sentRateRaw: byteRates[name]?.sent || 0,
+        recvRateRaw: recvRateBps,
+        sentRateRaw: sendRateBps,
+        totalRateRaw: totalRateBps,
       };
     });
 
-    const maxRecvRate = Math.max(1, ...entries.map((e) => e.recvRateRaw));
-    const maxSentRate = Math.max(1, ...entries.map((e) => e.sentRateRaw));
+    const visibleEntries = hideDownAndVirtual
+      ? entries.filter((e) => e.status === 'UP' && !e.isVirtual)
+      : entries;
 
-    const trafficItems = entries.map((e) => ({
+    const maxRecvRate = Math.max(1, ...visibleEntries.map((e) => e.recvRateRaw));
+    const maxSentRate = Math.max(1, ...visibleEntries.map((e) => e.sentRateRaw));
+    const maxTotalRate = Math.max(1, ...visibleEntries.map((e) => e.totalRateRaw));
+
+    const trafficItems = visibleEntries.map((e) => ({
       name: e.name,
       received: Math.max(2, (e.recvRateRaw / maxRecvRate) * 100),
       sent: Math.max(2, (e.sentRateRaw / maxSentRate) * 100),
       disabled: e.disabled,
     }));
 
-    const utilizationItems = entries.map((e) => ({
+    const utilizationItems = visibleEntries.map((e) => ({
       name: e.name,
-      utilization: e.utilization,
-      displayValue: e.utilizationDisplay,
+      utilization: e.utilizationDisplay == null ? Math.max(0, Math.min(100, (e.totalRateRaw / maxTotalRate) * 100)) : e.utilization,
+      displayValue: e.utilizationDisplay || `${Math.max(0, Math.min(100, (e.totalRateRaw / maxTotalRate) * 100)).toFixed(1)}%`,
       disabled: e.disabled,
     }));
 
-    const validUtils = entries.filter((e) => e.utilizationDisplay !== 'N/A').map((e) => e.utilization);
-    const systemAvg = validUtils.length ? validUtils.reduce((s, v) => s + v, 0) / validUtils.length : 0;
-    const peakNode = validUtils.length ? Math.max(...validUtils) : 0;
-
-    const rateValues = Object.values(packetRates);
+    const rateValues = visibleEntries.map((e) => packetRates[e.name] || 0);
     const pktSecAvg = rateValues.length ? rateValues.reduce((s, v) => s + v, 0) / rateValues.length : 0;
 
-    const maxBytes = Math.max(...entries.map((e) => Math.max(e.recvRateRaw, e.sentRateRaw)));
+    const maxBytes = Math.max(...visibleEntries.map((e) => Math.max(e.recvRateRaw, e.sentRateRaw)));
     const maxPktLabel = `${formatBytes(maxBytes)}/s`;
 
     return {
-      tableRows: entries,
+      tableRows: visibleEntries,
       utilizationItems,
       trafficItems,
-      systemAvg,
-      peakNode,
       pktSecAvg,
       maxPktLabel,
     };
-  }, [liveInterfaces, packetRates, byteRates]);
+  }, [liveInterfaces, packetRates, byteRates, hideDownAndVirtual]);
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#101622]">
@@ -144,10 +174,18 @@ export default function Interfaces() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-slate-100 mb-1">Network Interfaces</h1>
-            <p className="text-slate-500 text-sm">Real-time telemetry for physical and virtual interfaces</p>
-            <button className="mt-4 bg-[#1a2332] border border-slate-700 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-[#252d3d] transition-colors rounded">
-              REFRESH POOL
-            </button>
+            <p className="text-slate-500 text-sm">NIC-level telemetry for physical and virtual interfaces</p>
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => setHideDownAndVirtual((v) => !v)}
+                className="bg-[#1a2332] border border-slate-700 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-[#252d3d] transition-colors rounded"
+              >
+                {hideDownAndVirtual ? 'SHOW ALL INTERFACES' : 'HIDE DOWN/VIRTUAL'}
+              </button>
+              <button className="bg-[#1a2332] border border-slate-700 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-[#252d3d] transition-colors rounded">
+                REFRESH POOL
+              </button>
+            </div>
           </div>
 
           {/* Interfaces Table */}
@@ -159,8 +197,6 @@ export default function Interfaces() {
           <div className="grid grid-cols-2 gap-6">
             <UtilizationComparison
               interfaces={mapped.utilizationItems}
-              systemAvg={mapped.systemAvg}
-              peakNode={mapped.peakNode}
               pktSecAvg={mapped.pktSecAvg}
             />
             <TrafficThroughput data={mapped.trafficItems} maxPktLabel={mapped.maxPktLabel} />

@@ -74,6 +74,9 @@ export default function Traffic() {
     <div className="flex-1 overflow-y-auto bg-[#101622]">
       <div className="p-8 min-h-[calc(100vh-64px)]">
         <div className="max-w-[1400px] mx-auto space-y-6">
+          <div className="flex justify-end">
+            <span className="text-[10px] font-mono text-slate-500">SCOPE: HOST_TOTAL</span>
+          </div>
           <div className="grid grid-cols-4 gap-6">
             <MetricCard
               label="Bytes Sent"

@@ -7,8 +7,6 @@ const DEFAULT_INTERFACES = [
 
 export default function UtilizationComparison({
   interfaces = DEFAULT_INTERFACES,
-  systemAvg = 19.7,
-  peakNode = 62.4,
   pktSecAvg = 912.4,
 }) {
 
@@ -40,15 +38,7 @@ export default function UtilizationComparison({
         ))}
       </div>
 
-      <div className="mt-8 pt-6 border-t border-slate-700 flex justify-between">
-        <div className="text-center">
-          <div className="text-2xl font-black text-white leading-tight">{Number(systemAvg).toFixed(1)}%</div>
-          <div className="text-[9px] text-slate-500 tracking-widest uppercase mt-1">System Avg</div>
-        </div>
-        <div className="text-center">
-          <div className="text-2xl font-black text-[#256af4] leading-tight">{Number(peakNode).toFixed(1)}%</div>
-          <div className="text-[9px] text-slate-500 tracking-widest uppercase mt-1">Peak Node</div>
-        </div>
+      <div className="mt-8 pt-6 border-t border-slate-700 flex justify-end">
         <div className="text-center">
           <div className="text-2xl font-black text-white leading-tight">{Number(pktSecAvg).toFixed(1)}</div>
           <div className="text-[9px] text-slate-500 tracking-widest uppercase mt-1">Pkt/Sec Avg</div>
