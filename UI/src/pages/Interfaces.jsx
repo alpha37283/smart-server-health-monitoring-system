@@ -26,6 +26,7 @@ export default function Interfaces() {
   const { networkInterfaceMetrics } = useMetrics();
   const liveInterfaces = networkInterfaceMetrics?.data?.interfaces || null;
   const [packetRates, setPacketRates] = useState({});
+  const [byteRates, setByteRates] = useState({});
   const prevRef = useRef({ timestamp: null, counters: {} });
 
   useEffect(() => {
@@ -39,15 +40,23 @@ export default function Interfaces() {
     const dt = (now - prev.timestamp) / 1000;
     if (dt <= 0) return;
 
-    const nextRates = {};
+    const nextPacketRates = {};
+    const nextByteRates = {};
     Object.entries(liveInterfaces).forEach(([name, iface]) => {
       const old = prev.counters[name];
       if (!old) return;
       const sentDiff = (iface.interface_packets_sent || 0) - (old.interface_packets_sent || 0);
       const recvDiff = (iface.interface_packets_received || 0) - (old.interface_packets_received || 0);
-      nextRates[name] = Math.max(0, sentDiff + recvDiff) / dt;
+      const sentBytesDiff = (iface.interface_bytes_sent || 0) - (old.interface_bytes_sent || 0);
+      const recvBytesDiff = (iface.interface_bytes_received || 0) - (old.interface_bytes_received || 0);
+      nextPacketRates[name] = Math.max(0, sentDiff + recvDiff) / dt;
+      nextByteRates[name] = {
+        sent: Math.max(0, sentBytesDiff) / dt,
+        recv: Math.max(0, recvBytesDiff) / dt,
+      };
     });
-    setPacketRates(nextRates);
+    setPacketRates(nextPacketRates);
+    setByteRates(nextByteRates);
     prevRef.current = { timestamp: now, counters: liveInterfaces };
   }, [liveInterfaces]);
 
@@ -84,16 +93,18 @@ export default function Interfaces() {
         disabled: (iface.interface_status || 'DOWN') !== 'UP',
         recvRaw: iface.interface_bytes_received || 0,
         sentRaw: iface.interface_bytes_sent || 0,
+        recvRateRaw: byteRates[name]?.recv || 0,
+        sentRateRaw: byteRates[name]?.sent || 0,
       };
     });
 
-    const maxRecv = Math.max(1, ...entries.map((e) => e.recvRaw));
-    const maxSent = Math.max(1, ...entries.map((e) => e.sentRaw));
+    const maxRecvRate = Math.max(1, ...entries.map((e) => e.recvRateRaw));
+    const maxSentRate = Math.max(1, ...entries.map((e) => e.sentRateRaw));
 
     const trafficItems = entries.map((e) => ({
       name: e.name,
-      received: Math.max(2, (e.recvRaw / maxRecv) * 100),
-      sent: Math.max(2, (e.sentRaw / maxSent) * 100),
+      received: Math.max(2, (e.recvRateRaw / maxRecvRate) * 100),
+      sent: Math.max(2, (e.sentRateRaw / maxSentRate) * 100),
       disabled: e.disabled,
     }));
 
@@ -111,7 +122,7 @@ export default function Interfaces() {
     const rateValues = Object.values(packetRates);
     const pktSecAvg = rateValues.length ? rateValues.reduce((s, v) => s + v, 0) / rateValues.length : 0;
 
-    const maxBytes = Math.max(...entries.map((e) => Math.max(e.recvRaw, e.sentRaw)));
+    const maxBytes = Math.max(...entries.map((e) => Math.max(e.recvRateRaw, e.sentRateRaw)));
     const maxPktLabel = `${formatBytes(maxBytes)}/s`;
 
     return {
@@ -123,7 +134,7 @@ export default function Interfaces() {
       pktSecAvg,
       maxPktLabel,
     };
-  }, [liveInterfaces, packetRates]);
+  }, [liveInterfaces, packetRates, byteRates]);
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#101622]">
