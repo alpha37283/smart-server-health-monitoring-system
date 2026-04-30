@@ -137,28 +137,42 @@ export default function Interfaces() {
     const maxSentRate = Math.max(1, ...visibleEntries.map((e) => e.sentRateRaw));
     const maxTotalRate = Math.max(1, ...visibleEntries.map((e) => e.totalRateRaw));
 
-    const trafficItems = visibleEntries.map((e) => ({
+    const enrichedEntries = visibleEntries.map((e) => {
+      const fallbackUtilization = Math.max(0, Math.min(100, (e.totalRateRaw / maxTotalRate) * 100));
+      const hasBackendUtilization = e.utilizationDisplay != null;
+      return {
+        ...e,
+        effectiveUtilization: hasBackendUtilization ? e.utilization : fallbackUtilization,
+        effectiveUtilizationDisplay: hasBackendUtilization ? e.utilizationDisplay : `${fallbackUtilization.toFixed(1)}%`,
+      };
+    });
+
+    const trafficItems = enrichedEntries.map((e) => ({
       name: e.name,
       received: Math.max(2, (e.recvRateRaw / maxRecvRate) * 100),
       sent: Math.max(2, (e.sentRateRaw / maxSentRate) * 100),
       disabled: e.disabled,
     }));
 
-    const utilizationItems = visibleEntries.map((e) => ({
+    const utilizationItems = enrichedEntries.map((e) => ({
       name: e.name,
-      utilization: e.utilizationDisplay == null ? Math.max(0, Math.min(100, (e.totalRateRaw / maxTotalRate) * 100)) : e.utilization,
-      displayValue: e.utilizationDisplay || `${Math.max(0, Math.min(100, (e.totalRateRaw / maxTotalRate) * 100)).toFixed(1)}%`,
+      utilization: e.effectiveUtilization,
+      displayValue: e.effectiveUtilizationDisplay,
       disabled: e.disabled,
     }));
 
-    const rateValues = visibleEntries.map((e) => packetRates[e.name] || 0);
+    const rateValues = enrichedEntries.map((e) => packetRates[e.name] || 0);
     const pktSecAvg = rateValues.length ? rateValues.reduce((s, v) => s + v, 0) / rateValues.length : 0;
 
-    const maxBytes = Math.max(...visibleEntries.map((e) => Math.max(e.recvRateRaw, e.sentRateRaw)));
+    const maxBytes = Math.max(...enrichedEntries.map((e) => Math.max(e.recvRateRaw, e.sentRateRaw)));
     const maxPktLabel = `${formatBytes(maxBytes)}/s`;
 
     return {
-      tableRows: visibleEntries,
+      tableRows: enrichedEntries.map((e) => ({
+        ...e,
+        utilization: e.effectiveUtilization,
+        utilizationDisplay: e.effectiveUtilizationDisplay,
+      })),
       utilizationItems,
       trafficItems,
       pktSecAvg,
