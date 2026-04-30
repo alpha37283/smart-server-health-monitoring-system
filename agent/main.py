@@ -14,7 +14,7 @@ from agent.collector.network.connection import collect_network_connections
 from agent.collector.network.errors_drop import collect_network_errors
 from agent.collector.network.interface import collect_network_interfaces
 from agent.collector.network.network_latency_metric import collect_latency_metrics
-from agent.collector.network.port import collect_process_network_usage
+from agent.collector.network.process_network import collect_process_network_usage
 from agent.collector.network.traffic import collect_network_traffic
 
 from streaming.websocket_server import app, start_websocket
