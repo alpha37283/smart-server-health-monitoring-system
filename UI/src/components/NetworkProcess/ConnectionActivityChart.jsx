@@ -1,6 +1,25 @@
-export default function ConnectionActivityChart() {
-  const heights = [40, 35, 60, 45, 80, 95, 50, 40, 30, 55, 70, 60, 45, 35, 85, 40, 30, 50, 60, 90, 40, 35, 55, 45]
-  const spikeIndices = [5, 19]
+import { useEffect, useMemo, useState } from 'react';
+
+const DEFAULT_HEIGHTS = [40, 35, 60, 45, 80, 95, 50, 40, 30, 55, 70, 60, 45, 35, 85, 40, 30, 50, 60, 90, 40, 35, 55, 45];
+const MAX_POINTS = 24;
+
+export default function ConnectionActivityChart({ latestActivityScore = null }) {
+  const [heights, setHeights] = useState(DEFAULT_HEIGHTS);
+
+  useEffect(() => {
+    if (!Number.isFinite(latestActivityScore)) return;
+    const nextValue = Math.max(5, Math.min(100, latestActivityScore));
+    setHeights((prev) => [...prev.slice(-(MAX_POINTS - 1)), nextValue]);
+  }, [latestActivityScore]);
+
+  const spikeIndices = useMemo(() => {
+    if (!heights.length) return [];
+    const maxV = Math.max(...heights);
+    const threshold = maxV * 0.85;
+    return heights
+      .map((v, idx) => (v >= threshold ? idx : -1))
+      .filter((idx) => idx >= 0);
+  }, [heights]);
 
   return (
     <div className="bg-[#0f1521] rounded p-6 mb-6 border border-slate-800/50">
