@@ -1,10 +1,11 @@
-export default function TopProcessesChart() {
-  const processes = [
-    { name: 'nginx_main', pid: 1204, connections: 428, width: 85 },
-    { name: 'node_api_srv', pid: 3491, connections: 212, width: 45 },
-    { name: 'postgres_db', pid: 882, connections: 184, width: 38 },
-    { name: 'redis-server', pid: 771, connections: 122, width: 25 },
-  ]
+const DEFAULT_PROCESSES = [
+  { name: 'nginx_main', pid: 1204, connections: 428, width: 85 },
+  { name: 'node_api_srv', pid: 3491, connections: 212, width: 45 },
+  { name: 'postgres_db', pid: 882, connections: 184, width: 38 },
+  { name: 'redis-server', pid: 771, connections: 122, width: 25 },
+];
+
+export default function TopProcessesChart({ processes = DEFAULT_PROCESSES }) {
 
   return (
     <div className="bg-[#0f1521] rounded p-6 mb-6 border border-slate-800/50">

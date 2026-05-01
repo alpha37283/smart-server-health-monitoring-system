@@ -1,15 +1,15 @@
 import { useState } from 'react'
 
-export default function ProcessTable() {
-  const [expandedRows, setExpandedRows] = useState({})
+const DEFAULT_PROCESSES = [
+  { pid: 1204, name: 'nginx_main', established: 380, listen: 40, other: 8, total: 428, ports: [80, 443, 8080, 8443] },
+  { pid: 3491, name: 'node_api_srv', established: 190, listen: 15, other: 7, total: 212, ports: [3000, 3001, 5000, 5173] },
+  { pid: 882, name: 'postgres_db', established: 175, listen: 5, other: 4, total: 184, ports: [5432, 5433, 6432] },
+  { pid: 771, name: 'redis-server', established: 110, listen: 10, other: 2, total: 122, ports: [6379, 6380] },
+  { pid: 562, name: 'ssh_agent', established: 12, listen: 2, other: 0, total: 14, ports: [22, 2222] },
+];
 
-  const processes = [
-    { pid: 1204, name: 'nginx_main', established: 380, listen: 40, other: 8, total: 428, ports: [80, 443, 8080, 8443] },
-    { pid: 3491, name: 'node_api_srv', established: 190, listen: 15, other: 7, total: 212, ports: [3000, 3001, 5000, 5173] },
-    { pid: 882, name: 'postgres_db', established: 175, listen: 5, other: 4, total: 184, ports: [5432, 5433, 6432] },
-    { pid: 771, name: 'redis-server', established: 110, listen: 10, other: 2, total: 122, ports: [6379, 6380] },
-    { pid: 562, name: 'ssh_agent', established: 12, listen: 2, other: 0, total: 14, ports: [22, 2222] },
-  ]
+export default function ProcessTable({ processes = DEFAULT_PROCESSES, totalProcesses = 248 }) {
+  const [expandedRows, setExpandedRows] = useState({})
 
   const toggleExpand = (idx) => {
     setExpandedRows(prev => ({
@@ -95,7 +95,7 @@ export default function ProcessTable() {
 
       {/* Pagination */}
       <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-between">
-        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Showing 5 of 248 Processes</span>
+        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Showing {processes.length} of {totalProcesses} Processes</span>
         <div className="flex gap-1">
           <button className="bg-slate-800 px-2 py-1 rounded text-[10px] text-slate-400 hover:text-white transition-colors">
             <span className="material-symbols-outlined text-sm">navigate_before</span>
