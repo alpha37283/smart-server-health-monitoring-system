@@ -31,7 +31,6 @@ export default function NetworkProcesses() {
   const data = networkProcessMetrics?.data || {};
   const connectionsPerProcess = data.connections_per_process || {};
   const processRows = toProcessRows(connectionsPerProcess);
-  const displayedRows = processRows.slice(0, 5);
 
   const totalProcesses = (data.network_process_list || []).length;
   const activeConnections = processRows.reduce((sum, p) => sum + p.total, 0);
@@ -43,7 +42,7 @@ export default function NetworkProcesses() {
     pid: p.pid,
     connections: (p.connections || []).length,
   }));
-  const fallbackTop = displayedRows.map((p) => ({ name: p.name, pid: p.pid, connections: p.total }));
+  const fallbackTop = processRows.slice(0, 5).map((p) => ({ name: p.name, pid: p.pid, connections: p.total }));
   const chartBase = topByConnections.length ? topByConnections : fallbackTop;
   const maxConnections = Math.max(1, ...chartBase.map((p) => p.connections || 0));
   const topProcesses = chartBase.map((p) => ({
@@ -68,7 +67,7 @@ export default function NetworkProcesses() {
           />
           <TopProcessesChart processes={topProcesses} />
           <ConnectionActivityChart latestActivityScore={latestActivityScore} />
-          <ProcessTable processes={displayedRows} totalProcesses={totalProcesses || 248} />
+          <ProcessTable processes={processRows} totalProcesses={totalProcesses || processRows.length || 248} />
         </div>
       </div>
     </div>

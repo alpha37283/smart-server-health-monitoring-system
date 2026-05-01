@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+
+const PAGE_SIZE = 5
 
 const DEFAULT_PROCESSES = [
   { pid: 1204, name: 'nginx_main', established: 380, listen: 40, other: 8, total: 428, ports: [80, 443, 8080, 8443] },
@@ -10,13 +12,34 @@ const DEFAULT_PROCESSES = [
 
 export default function ProcessTable({ processes = DEFAULT_PROCESSES, totalProcesses = 248 }) {
   const [expandedRows, setExpandedRows] = useState({})
+  const [currentPage, setCurrentPage] = useState(1)
 
-  const toggleExpand = (idx) => {
-    setExpandedRows(prev => ({
+  const totalPages = Math.max(1, Math.ceil(processes.length / PAGE_SIZE))
+  const startIndex = (currentPage - 1) * PAGE_SIZE
+  const pageRows = useMemo(
+    () => processes.slice(startIndex, startIndex + PAGE_SIZE),
+    [processes, startIndex]
+  )
+
+  useEffect(() => {
+    setCurrentPage((p) => {
+      if (processes.length === 0) return 1
+      const maxPage = Math.max(1, Math.ceil(processes.length / PAGE_SIZE))
+      return Math.min(p, maxPage)
+    })
+  }, [processes.length])
+
+  const toggleExpand = (pid) => {
+    setExpandedRows((prev) => ({
       ...prev,
-      [idx]: !prev[idx]
+      [pid]: !prev[pid],
     }))
   }
+
+  const goPrev = () => setCurrentPage((p) => Math.max(1, p - 1))
+  const goNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1))
+  const showingFrom = processes.length === 0 ? 0 : startIndex + 1
+  const showingTo = Math.min(startIndex + pageRows.length, processes.length)
 
   return (
     <div className="bg-[#0f1521] rounded overflow-hidden border border-slate-800/50">
@@ -52,8 +75,8 @@ export default function ProcessTable({ processes = DEFAULT_PROCESSES, totalProce
 
       {/* Table Body */}
       <div className="divide-y divide-slate-800">
-        {processes.map((proc, idx) => (
-          <div key={idx} className="group">
+        {pageRows.map((proc) => (
+          <div key={proc.pid} className="group">
             <div className="grid grid-cols-12 px-6 py-4 items-center text-xs hover:bg-slate-800/20 transition-colors cursor-pointer">
               <div className="col-span-1 font-mono text-slate-400">{proc.pid}</div>
               <div className="col-span-3 font-bold text-white">{proc.name}</div>
@@ -62,17 +85,17 @@ export default function ProcessTable({ processes = DEFAULT_PROCESSES, totalProce
               <div className="col-span-2 text-center font-bold text-white">{proc.total}</div>
               <div className="col-span-2 text-right">
                 <button
-                  onClick={() => toggleExpand(idx)}
+                  onClick={() => toggleExpand(proc.pid)}
                   className="text-slate-600 hover:text-white transition-colors"
                 >
                   <span className="material-symbols-outlined text-sm">
-                    {expandedRows[idx] ? 'expand_less' : 'expand_more'}
+                    {expandedRows[proc.pid] ? 'expand_less' : 'expand_more'}
                   </span>
                 </button>
               </div>
             </div>
 
-            {expandedRows[idx] && (
+            {expandedRows[proc.pid] && (
               <div className="bg-slate-900/20 px-6 py-4 border-t border-slate-800">
                 <div className="text-xs">
                   <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-3">Ports</p>
@@ -95,16 +118,23 @@ export default function ProcessTable({ processes = DEFAULT_PROCESSES, totalProce
 
       {/* Pagination */}
       <div className="px-6 py-4 border-t border-slate-800 flex items-center justify-between">
-        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Showing {processes.length} of {totalProcesses} Processes</span>
+        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Showing {showingFrom}-{showingTo} of {totalProcesses} Processes</span>
         <div className="flex gap-1">
-          <button className="bg-slate-800 px-2 py-1 rounded text-[10px] text-slate-400 hover:text-white transition-colors">
+          <button
+            onClick={goPrev}
+            disabled={currentPage === 1}
+            className={`bg-slate-800 px-2 py-1 rounded text-[10px] transition-colors ${
+              currentPage === 1 ? 'text-slate-600 cursor-not-allowed' : 'text-slate-400 hover:text-white'
+            }`}
+          >
             <span className="material-symbols-outlined text-sm">navigate_before</span>
           </button>
-          {[1, 2, 3].map(num => (
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
             <button
               key={num}
+              onClick={() => setCurrentPage(num)}
               className={`px-3 py-1 rounded text-[10px] font-bold transition-colors ${
-                num === 1
+                num === currentPage
                   ? 'bg-[#256af4] text-white'
                   : 'bg-slate-800 text-slate-400 hover:text-white'
               }`}
@@ -112,7 +142,13 @@ export default function ProcessTable({ processes = DEFAULT_PROCESSES, totalProce
               {num}
             </button>
           ))}
-          <button className="bg-slate-800 px-2 py-1 rounded text-[10px] text-slate-400 hover:text-white transition-colors">
+          <button
+            onClick={goNext}
+            disabled={currentPage === totalPages}
+            className={`bg-slate-800 px-2 py-1 rounded text-[10px] transition-colors ${
+              currentPage === totalPages ? 'text-slate-600 cursor-not-allowed' : 'text-slate-400 hover:text-white'
+            }`}
+          >
             <span className="material-symbols-outlined text-sm">navigate_next</span>
           </button>
         </div>

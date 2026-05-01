@@ -3,6 +3,12 @@ import { useEffect, useMemo, useState } from 'react';
 const DEFAULT_HEIGHTS = [40, 35, 60, 45, 80, 95, 50, 40, 30, 55, 70, 60, 45, 35, 85, 40, 30, 50, 60, 90, 40, 35, 55, 45];
 const MAX_POINTS = 24;
 
+function formatTimeLabel(date) {
+  const h = String(date.getHours()).padStart(2, '0');
+  const m = String(date.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+}
+
 export default function ConnectionActivityChart({ latestActivityScore = null }) {
   const [heights, setHeights] = useState(DEFAULT_HEIGHTS);
 
@@ -21,6 +27,16 @@ export default function ConnectionActivityChart({ latestActivityScore = null }) 
       .filter((idx) => idx >= 0);
   }, [heights]);
 
+  const timeLabels = useMemo(() => {
+    const now = new Date();
+    const labels = [];
+    for (let h = 24; h >= 0; h -= 4) {
+      const d = new Date(now.getTime() - h * 60 * 60 * 1000);
+      labels.push(formatTimeLabel(d));
+    }
+    return labels;
+  }, [heights.length]);
+
   return (
     <div className="bg-[#0f1521] rounded p-6 mb-6 border border-slate-800/50">
       <div className="flex justify-between items-center mb-6">
@@ -32,7 +48,7 @@ export default function ConnectionActivityChart({ latestActivityScore = null }) 
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-            <span className="text-[10px] text-slate-500 uppercase font-bold">Spike</span>
+            <span className="text-[10px] text-slate-500 uppercase font-bold">High Activity</span>
           </div>
         </div>
       </div>
@@ -52,13 +68,9 @@ export default function ConnectionActivityChart({ latestActivityScore = null }) 
       </div>
 
       <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest border-t border-slate-800 pt-4">
-        <span>00:00</span>
-        <span>04:00</span>
-        <span>08:00</span>
-        <span>12:00</span>
-        <span>16:00</span>
-        <span>20:00</span>
-        <span>23:59</span>
+        {timeLabels.map((label) => (
+          <span key={label}>{label}</span>
+        ))}
       </div>
     </div>
   )
