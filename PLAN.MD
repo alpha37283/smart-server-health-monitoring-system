@@ -90,3 +90,103 @@ Use **one subdirectory per domain**, each file = one publishable concern + one p
 This keeps **collection**, **transport**, and **ML** decoupled so River can roll out incrementally without rewriting existing collectors.
 
 ==================================================
+
+### E. Event flow: UI subscriber first, River subscriber later
+
+**Principle:** Collectors only measure and publish `{ timestamp, type, data }` to the shared **`EventBus`**. They do not know about the UI or River.
+
+**Subscriber 1 — presentation (initial build):** The existing pipeline that listens on the bus and pushes metric-shaped updates to clients (e.g. WebSocket server / `handle_event` → browser). The React app subscribes and renders dashboards. Security metrics follow the same contract as `system` / `network`: add `type` handling in the streaming layer and in `useMetricsWebSocket` (or equivalent) so new security types appear on the UI.
+
+**Subscriber 2 — analytics prep (later):** A separate component subscribes to the **same** `EventBus`, maintains optional last-value state, normalizes each `type` into fixed numeric vectors (see §A), and either feeds **River** in-process or publishes derived events (e.g. `anomaly_metrics`). Collectors stay unchanged when this is added.
+
+```text
+Collectors  →  publish  →  EventBus
+                              │
+                              ├──► Subscriber 1: WebSocket / UI (ship first)
+                              │
+                              └──► Subscriber 2: feature builder → River (add later)
+```
+
+Security collectors are specified so **`data`** is mostly integers and interval counts: good for cards and charts **now**, and straightforward to flatten for **Subscriber 2** without redesign.
+
+---
+
+### F. Security collectors (`agent/collector/security/`)
+
+Layout (one file per metric family, same pattern as `agent/collector/system/`):
+
+```text
+security/
+├── authentication.py
+├── sudo_privilege.py
+├── listening_surface.py
+├── session_users.py
+└── kernel_security.py    # optional
+```
+
+Each module: one async `collect_* (event_bus)`, one primary event `type`, flat `data` for UI and for future River features.
+
+---
+
+#### `authentication.py`
+
+| | |
+|--|--|
+| **Event `type`** | `security_authentication_metrics` |
+| **Purpose** | Login activity and suspected abuse (e.g. brute force). |
+| **`data` fields** | `failed_password_count_interval`, `invalid_user_count_interval`, `connection_closed_preauth_interval`, `successful_logins_interval` (integers per collection interval). |
+| **UI** | Cards: failed logins, invalid users, successful logins. Time series: failed vs successful; optional emphasis on spikes. |
+
+---
+
+#### `sudo_privilege.py`
+
+| | |
+|--|--|
+| **Event `type`** | `security_privilege_metrics` |
+| **Purpose** | Privilege escalation attempts and denials. |
+| **`data` fields** | `sudo_auth_failure_interval`, `sudo_command_denied_interval`, `su_failure_interval`. |
+| **UI** | Cards for each bucket; bar or line chart for trends / spikes. |
+
+---
+
+#### `listening_surface.py`
+
+| | |
+|--|--|
+| **Event `type`** | `security_listening_surface_metrics` |
+| **Purpose** | Exposed services / listening attack surface. |
+| **`data` fields** | `listen_socket_count`, `tcp_listen_count`, `udp_listen_count`, `distinct_listen_ports`, `new_listen_ports_interval`. |
+| **UI** | Cards for totals and TCP/UDP breakdown; optional short message when `new_listen_ports_interval` > 0 (e.g. new listeners since last snapshot). |
+
+---
+
+#### `session_users.py`
+
+| | |
+|--|--|
+| **Event `type`** | `security_session_metrics` |
+| **Purpose** | Who is on the system right now. |
+| **`data` fields** | `interactive_sessions`, `distinct_users`, `remote_sessions`, `local_sessions`. |
+| **UI** | Summary cards; optional detail table (username, terminal, login time) if you add a capped list in a later iteration—keep primary payload numeric for Subscriber 2. |
+
+---
+
+#### `kernel_security.py` (optional)
+
+| | |
+|--|--|
+| **Event `type`** | `security_kernel_metrics` |
+| **Purpose** | Severe kernel-level signals in an interval (e.g. critical journal/dmesg-derived counts). |
+| **`data` fields** | `dmesg_critical_interval` (or equivalently named critical-event count). |
+| **UI** | Single KPI card; sparkline or line chart for spikes. |
+
+---
+
+### G. Wiring reminders
+
+- Register each security collector in `agent/main.py` with an interval appropriate for log/journal IO (often **slower** than 0.8s, e.g. 2–10s).
+- **Subscriber 1:** extend WebSocket event routing so each `security_*` type is forwarded to the UI store/hooks.
+- **Subscriber 2:** when introduced, map these types with trivial flattening (already mostly flat ints).
+
+==================================================
