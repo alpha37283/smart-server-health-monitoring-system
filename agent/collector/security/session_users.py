@@ -7,6 +7,21 @@ import psutil
 _prev_sessions = set()
 
 
+def _is_remote_host(host):
+    if not host:
+        return False
+
+    host = host.strip().lower()
+
+    local_hosts = {
+        "localhost",
+        "127.0.0.1",
+        "::1",
+    }
+
+    return host not in local_hosts
+
+
 def get_session_user_metrics():
     global _prev_sessions
 
@@ -41,8 +56,10 @@ def get_session_user_metrics():
 
         counts["interactive_sessions"] += 1
 
+        is_remote = _is_remote_host(host)
+
         # remote vs local
-        if host:
+        if is_remote:
             counts["remote_sessions"] += 1
         else:
             counts["local_sessions"] += 1
@@ -52,7 +69,7 @@ def get_session_user_metrics():
             counts["root_sessions"] += 1
 
         # ssh sessions
-        if host or terminal.startswith("pts"):
+        if is_remote:
             counts["ssh_sessions"] += 1
 
     counts["distinct_users"] = len(distinct_users)
