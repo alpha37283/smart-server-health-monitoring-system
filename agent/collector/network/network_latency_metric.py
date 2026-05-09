@@ -154,6 +154,6 @@ async def collect_latency_metrics(event_bus):
         }
     }
 
-    print("Latency Metrics Collected : ", event)
+    print(". . . Latency Metrics Collected . . .")
 
     await event_bus.publish(event)

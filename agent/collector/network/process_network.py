@@ -100,6 +100,6 @@ async def collect_process_network_usage(event_bus):
         }
     }
 
-    print("Process Network Data collected : ", event)
+    print(". . . Process Network Data collected . . .")
 
     await event_bus.publish(event)

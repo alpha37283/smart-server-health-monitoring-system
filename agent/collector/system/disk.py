@@ -110,6 +110,6 @@ async def collect_disk(event_bus):
         }
     }
 
-    print(f"Disk Data Collected")
+    print(f". . . Disk Data collected . . .")
 
     await event_bus.publish(event)

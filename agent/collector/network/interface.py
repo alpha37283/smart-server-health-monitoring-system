@@ -137,6 +137,6 @@ async def collect_network_interfaces(event_bus):
         }
     }
 
-    print("Network Interface Data collected : ", event)
+    print(". . . Network Interface Data collected . . .")
 
     await event_bus.publish(event)

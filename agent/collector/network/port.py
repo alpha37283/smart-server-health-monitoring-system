@@ -85,6 +85,6 @@ async def collect_process_network_usage(event_bus):
         }
     }
 
-    print("Process PORT Usage Data collected", event, " =======")
+    print(". . . Process PORT Usage Data collected . . .")
 
     await event_bus.publish(event)

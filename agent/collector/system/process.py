@@ -150,6 +150,6 @@ async def collect_process(event_bus):
         }
     }
 
-    print(f"Processes Data Collected Total of {TOP_N}")
+    print(f". . . Processes Data collected . . .")
 
     await event_bus.publish(event)

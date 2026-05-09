@@ -49,6 +49,6 @@ async def collect_memory(event_bus):
         }
     }
 
-    print(f"Memory Data collected")
+    print(f". . . Memory Data collected . . .")
 
     await event_bus.publish(event)
