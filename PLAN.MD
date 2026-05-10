@@ -4,9 +4,501 @@ keep in mind that not all metrics need to be run each second specifically the ne
 
 
 There are bugs in UI of network/Connections page fix them.
+=======================================================================================
 
+# Container Metrics Collection Plan (Refined)
 
+---
 
+# container_runtime.py
+
+## Purpose
+Collect overall container runtime state and lifecycle overview.
+
+## Metrics
+
+```json
+{
+  "total_containers": {
+    "purpose": "Total detected containers",
+    "method": "Docker SDK"
+  },
+  "running_containers": {
+    "purpose": "Currently running containers",
+    "method": "Docker SDK"
+  },
+  "stopped_containers": {
+    "purpose": "Stopped containers",
+    "method": "Docker SDK"
+  },
+  "paused_containers": {
+    "purpose": "Paused containers",
+    "method": "Docker SDK"
+  },
+  "restarting_containers": {
+    "purpose": "Containers currently restarting",
+    "method": "Docker SDK"
+  },
+  "dead_containers": {
+    "purpose": "Dead/unresponsive containers",
+    "method": "Docker SDK"
+  },
+  "container_runtime_status": {
+    "purpose": "Runtime daemon health state",
+    "method": "Docker SDK / systemctl"
+  },
+  "docker_daemon_uptime": {
+    "purpose": "Container runtime uptime",
+    "method": "Manual implementation"
+  },
+  "runtime_version": {
+    "purpose": "Docker/container runtime version",
+    "method": "Docker SDK"
+  }
+}
+```
+
+---
+
+# container_resource.py
+
+## Purpose
+Track per-container resource usage.
+
+## Metrics
+
+```json
+{
+  "container_cpu_percent": {
+    "purpose": "CPU usage per container",
+    "method": "Docker SDK"
+  },
+  "container_memory_usage": {
+    "purpose": "RAM used by container",
+    "method": "Docker SDK"
+  },
+  "container_memory_limit": {
+    "purpose": "Assigned memory limit",
+    "method": "Docker SDK"
+  },
+  "container_memory_percent": {
+    "purpose": "Memory utilization percentage",
+    "method": "Manual calculation"
+  },
+  "container_swap_usage": {
+    "purpose": "Swap memory usage",
+    "method": "Docker SDK"
+  },
+  "container_pids": {
+    "purpose": "Total processes inside container",
+    "method": "Docker SDK"
+  },
+  "container_blk_read_bytes": {
+    "purpose": "Disk read activity",
+    "method": "Docker SDK"
+  },
+  "container_blk_write_bytes": {
+    "purpose": "Disk write activity",
+    "method": "Docker SDK"
+  },
+  "container_io_rate": {
+    "purpose": "Disk IO throughput rate",
+    "method": "Manual delta calculation"
+  },
+  "cpu_throttling_events": {
+    "purpose": "CPU throttling occurrences",
+    "method": "cgroup files"
+  },
+  "cpu_throttled_time": {
+    "purpose": "Time CPU remained throttled",
+    "method": "cgroup files"
+  },
+  "container_fd_count": {
+    "purpose": "Open file descriptors",
+    "method": "/proc manual implementation"
+  }
+}
+```
+
+---
+
+# container_network.py
+
+## Purpose
+Track container networking activity and traffic visibility.
+
+## Metrics
+
+```json
+{
+  "container_rx_bytes": {
+    "purpose": "Incoming network traffic",
+    "method": "Docker SDK"
+  },
+  "container_tx_bytes": {
+    "purpose": "Outgoing network traffic",
+    "method": "Docker SDK"
+  },
+  "container_rx_packets": {
+    "purpose": "Incoming packets",
+    "method": "Docker SDK"
+  },
+  "container_tx_packets": {
+    "purpose": "Outgoing packets",
+    "method": "Docker SDK"
+  },
+  "container_rx_errors": {
+    "purpose": "Receive-side network errors",
+    "method": "Docker SDK"
+  },
+  "container_tx_errors": {
+    "purpose": "Transmit-side network errors",
+    "method": "Docker SDK"
+  },
+  "active_container_connections": {
+    "purpose": "Current active network connections",
+    "method": "psutil + namespace mapping"
+  },
+  "container_open_ports": {
+    "purpose": "Listening/exposed ports",
+    "method": "Docker SDK"
+  },
+  "public_exposed_ports": {
+    "purpose": "Ports exposed publicly",
+    "method": "Docker SDK"
+  },
+  "network_bandwidth_rate": {
+    "purpose": "Traffic transfer rate/sec",
+    "method": "Manual delta calculation"
+  }
+}
+```
+
+---
+
+# container_process.py
+
+## Purpose
+Track process behavior inside containers.
+
+## Metrics
+
+```json
+{
+  "process_count": {
+    "purpose": "Total running processes",
+    "method": "Docker SDK"
+  },
+  "zombie_process_count": {
+    "purpose": "Zombie processes inside container",
+    "method": "psutil"
+  },
+  "thread_count": {
+    "purpose": "Total active threads",
+    "method": "psutil"
+  },
+  "top_cpu_process": {
+    "purpose": "Highest CPU consuming process",
+    "method": "psutil"
+  },
+  "top_memory_process": {
+    "purpose": "Highest memory consuming process",
+    "method": "psutil"
+  },
+  "fork_rate": {
+    "purpose": "Rate of process creation",
+    "method": "Manual interval diff"
+  },
+  "orphan_process_count": {
+    "purpose": "Detached/orphan processes",
+    "method": "psutil"
+  },
+  "shell_spawn_count": {
+    "purpose": "Interactive shell spawns",
+    "method": "Manual process inspection"
+  },
+  "exec_command_count": {
+    "purpose": "docker exec activity",
+    "method": "Docker Events API"
+  }
+}
+```
+
+---
+
+# container_health.py
+
+## Purpose
+Track container lifecycle stability and operational health.
+
+## Metrics
+
+```json
+{
+  "healthy_containers": {
+    "purpose": "Containers passing health checks",
+    "method": "Docker SDK"
+  },
+  "unhealthy_containers": {
+    "purpose": "Containers failing health checks",
+    "method": "Docker SDK"
+  },
+  "restarting_loop_count": {
+    "purpose": "Containers stuck in restart loops",
+    "method": "Docker SDK"
+  },
+  "container_uptime": {
+    "purpose": "Container runtime duration",
+    "method": "Docker SDK"
+  },
+  "container_restart_count": {
+    "purpose": "Container restart frequency",
+    "method": "Docker SDK"
+  },
+  "oom_kill_count": {
+    "purpose": "Out-of-memory terminations",
+    "method": "Docker Events API"
+  },
+  "failed_health_checks": {
+    "purpose": "Health check failures",
+    "method": "Docker SDK"
+  },
+  "container_exit_codes": {
+    "purpose": "Container exit status tracking",
+    "method": "Docker SDK"
+  }
+}
+```
+
+---
+
+# container_image.py
+
+## Purpose
+Track container image inventory and storage usage.
+
+## Metrics
+
+```json
+{
+  "total_images": {
+    "purpose": "Total images present",
+    "method": "Docker SDK"
+  },
+  "dangling_images": {
+    "purpose": "Unused images",
+    "method": "Docker SDK"
+  },
+  "image_size_bytes": {
+    "purpose": "Storage size consumed by images",
+    "method": "Docker SDK"
+  },
+  "image_pull_frequency": {
+    "purpose": "Frequency of image downloads",
+    "method": "Docker Events API"
+  },
+  "image_age_days": {
+    "purpose": "Image age tracking",
+    "method": "Manual timestamp calculation"
+  },
+  "duplicate_image_count": {
+    "purpose": "Duplicate/redundant images",
+    "method": "Manual grouping"
+  },
+  "latest_tag_usage": {
+    "purpose": "Usage of latest tags",
+    "method": "Manual inspection"
+  }
+}
+```
+
+---
+
+# container_volume.py
+
+## Purpose
+Track persistent storage usage and mounted volumes.
+
+## Metrics
+
+```json
+{
+  "total_volumes": {
+    "purpose": "Total mounted volumes",
+    "method": "Docker SDK"
+  },
+  "unused_volumes": {
+    "purpose": "Orphan/unused volumes",
+    "method": "Docker SDK"
+  },
+  "volume_read_bytes": {
+    "purpose": "Volume read throughput",
+    "method": "Filesystem stats"
+  },
+  "volume_write_bytes": {
+    "purpose": "Volume write throughput",
+    "method": "Filesystem stats"
+  },
+  "volume_usage_percent": {
+    "purpose": "Storage utilization percentage",
+    "method": "psutil"
+  },
+  "high_growth_volumes": {
+    "purpose": "Rapidly growing storage",
+    "method": "Manual delta calculation"
+  },
+  "volume_mount_count": {
+    "purpose": "Total mounted volumes per container",
+    "method": "Docker SDK"
+  },
+  "deleted_open_files": {
+    "purpose": "Hidden disk consumption",
+    "method": "lsof/manual implementation"
+  }
+}
+```
+
+---
+
+# container_events.py
+
+## Purpose
+Track container runtime events and lifecycle actions.
+
+## Metrics
+
+```json
+{
+  "container_start_events": {
+    "purpose": "Container startup events",
+    "method": "Docker Events API"
+  },
+  "container_stop_events": {
+    "purpose": "Container stop events",
+    "method": "Docker Events API"
+  },
+  "container_kill_events": {
+    "purpose": "Forced kill events",
+    "method": "Docker Events API"
+  },
+  "container_restart_events": {
+    "purpose": "Restart events",
+    "method": "Docker Events API"
+  },
+  "container_exec_events": {
+    "purpose": "docker exec activity",
+    "method": "Docker Events API"
+  },
+  "image_pull_events": {
+    "purpose": "Image pull events",
+    "method": "Docker Events API"
+  },
+  "attach_events": {
+    "purpose": "Interactive attach events",
+    "method": "Docker Events API"
+  },
+  "detach_events": {
+    "purpose": "Detach session events",
+    "method": "Docker Events API"
+  },
+  "event_rate": {
+    "purpose": "Event frequency per interval",
+    "method": "Manual interval counting"
+  }
+}
+```
+
+---
+
+# container_namespace.py
+
+## Purpose
+Track namespace isolation visibility.
+
+## Metrics
+
+```json
+{
+  "pid_namespace_count": {
+    "purpose": "PID namespace tracking",
+    "method": "/proc inspection"
+  },
+  "network_namespace_count": {
+    "purpose": "Network namespace tracking",
+    "method": "/proc inspection"
+  },
+  "mount_namespace_count": {
+    "purpose": "Mount namespace tracking",
+    "method": "/proc inspection"
+  },
+  "shared_namespace_containers": {
+    "purpose": "Containers sharing namespaces",
+    "method": "Manual comparison"
+  },
+  "host_network_mode_count": {
+    "purpose": "Containers using host networking",
+    "method": "Docker SDK"
+  }
+}
+```
+
+---
+
+# container_security.py
+
+## Purpose
+Track container security posture and risky configurations.
+
+## Metrics
+
+```json
+{
+  "privileged_containers": {
+    "purpose": "Containers running in privileged mode",
+    "method": "Docker SDK"
+  },
+  "root_user_containers": {
+    "purpose": "Containers running as root",
+    "method": "Docker SDK"
+  },
+  "dangerous_capabilities": {
+    "purpose": "High-risk Linux capabilities",
+    "method": "Docker inspect"
+  },
+  "seccomp_disabled_count": {
+    "purpose": "Containers without seccomp",
+    "method": "Docker inspect"
+  },
+  "apparmor_disabled_count": {
+    "purpose": "Containers without AppArmor",
+    "method": "Docker inspect"
+  },
+  "selinux_disabled_count": {
+    "purpose": "Containers without SELinux",
+    "method": "Docker inspect"
+  },
+  "writable_rootfs_count": {
+    "purpose": "Writable root filesystem containers",
+    "method": "Docker inspect"
+  },
+  "host_pid_namespace_usage": {
+    "purpose": "Containers sharing host PID namespace",
+    "method": "Docker inspect"
+  },
+  "host_network_usage": {
+    "purpose": "Containers using host networking",
+    "method": "Docker inspect"
+  },
+  "sensitive_mount_count": {
+    "purpose": "Sensitive host path mounts",
+    "method": "Docker inspect"
+  },
+  "docker_socket_mount_count": {
+    "purpose": "Mounted Docker socket detection",
+    "method": "Docker inspect"
+  }
+}
+```
 
 ======================= Plan =====================
 
@@ -88,105 +580,3 @@ Use **one subdirectory per domain**, each file = one publishable concern + one p
 6. For River: add **feature mapping** for this `type` in the analytics module when you want it scored.
 
 This keeps **collection**, **transport**, and **ML** decoupled so River can roll out incrementally without rewriting existing collectors.
-
-==================================================
-
-### E. Event flow: UI subscriber first, River subscriber later
-
-**Principle:** Collectors only measure and publish `{ timestamp, type, data }` to the shared **`EventBus`**. They do not know about the UI or River.
-
-**Subscriber 1 — presentation (initial build):** The existing pipeline that listens on the bus and pushes metric-shaped updates to clients (e.g. WebSocket server / `handle_event` → browser). The React app subscribes and renders dashboards. Security metrics follow the same contract as `system` / `network`: add `type` handling in the streaming layer and in `useMetricsWebSocket` (or equivalent) so new security types appear on the UI.
-
-**Subscriber 2 — analytics prep (later):** A separate component subscribes to the **same** `EventBus`, maintains optional last-value state, normalizes each `type` into fixed numeric vectors (see §A), and either feeds **River** in-process or publishes derived events (e.g. `anomaly_metrics`). Collectors stay unchanged when this is added.
-
-```text
-Collectors  →  publish  →  EventBus
-                              │
-                              ├──► Subscriber 1: WebSocket / UI (ship first)
-                              │
-                              └──► Subscriber 2: feature builder → River (add later)
-```
-
-Security collectors are specified so **`data`** is mostly integers and interval counts: good for cards and charts **now**, and straightforward to flatten for **Subscriber 2** without redesign.
-
----
-
-### F. Security collectors (`agent/collector/security/`)
-
-Layout (one file per metric family, same pattern as `agent/collector/system/`):
-
-```text
-security/
-├── authentication.py
-├── sudo_privilege.py
-├── listening_surface.py
-├── session_users.py
-└── kernel_security.py    # optional
-```
-
-Each module: one async `collect_* (event_bus)`, one primary event `type`, flat `data` for UI and for future River features.
-
----
-
-#### `authentication.py`
-
-| | |
-|--|--|
-| **Event `type`** | `security_authentication_metrics` |
-| **Purpose** | Login activity and suspected abuse (e.g. brute force). |
-| **`data` fields** | `failed_password_count_interval`, `invalid_user_count_interval`, `connection_closed_preauth_interval`, `successful_logins_interval` (integers per collection interval). |
-| **UI** | Cards: failed logins, invalid users, successful logins. Time series: failed vs successful; optional emphasis on spikes. |
-
----
-
-#### `sudo_privilege.py`
-
-| | |
-|--|--|
-| **Event `type`** | `security_privilege_metrics` |
-| **Purpose** | Privilege escalation attempts and denials. |
-| **`data` fields** | `sudo_auth_failure_interval`, `sudo_command_denied_interval`, `su_failure_interval`. |
-| **UI** | Cards for each bucket; bar or line chart for trends / spikes. |
-
----
-
-#### `listening_surface.py`
-
-| | |
-|--|--|
-| **Event `type`** | `security_listening_surface_metrics` |
-| **Purpose** | Exposed services / listening attack surface. |
-| **`data` fields** | `listen_socket_count`, `tcp_listen_count`, `udp_listen_count`, `distinct_listen_ports`, `new_listen_ports_interval`. |
-| **UI** | Cards for totals and TCP/UDP breakdown; optional short message when `new_listen_ports_interval` > 0 (e.g. new listeners since last snapshot). |
-
----
-
-#### `session_users.py`
-
-| | |
-|--|--|
-| **Event `type`** | `security_session_metrics` |
-| **Purpose** | Who is on the system right now. |
-| **`data` fields** | `interactive_sessions`, `distinct_users`, `remote_sessions`, `local_sessions`. |
-| **UI** | Summary cards; optional detail table (username, terminal, login time) if you add a capped list in a later iteration—keep primary payload numeric for Subscriber 2. |
-
----
-
-#### `kernel_security.py` (optional)
-
-| | |
-|--|--|
-| **Event `type`** | `security_kernel_metrics` |
-| **Purpose** | Severe kernel-level signals in an interval (e.g. critical journal/dmesg-derived counts). |
-| **`data` fields** | `dmesg_critical_interval` (or equivalently named critical-event count). |
-| **UI** | Single KPI card; sparkline or line chart for spikes. |
-
----
-
-### G. Wiring reminders
-
-- Register each security collector in `agent/main.py` with an interval appropriate for log/journal IO (often **slower** than 0.8s, e.g. 2–10s).
-- **Subscriber 1:** extend WebSocket event routing so each `security_*` type is forwarded to the UI store/hooks.
-- **Subscriber 2:** when introduced, map these types with trivial flattening (already mostly flat ints).
-
-==================================================
