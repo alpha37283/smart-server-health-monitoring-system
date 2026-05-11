@@ -127,17 +127,11 @@ def get_container_resource_metrics(client):
         try:
             stats = container.stats(stream=False)
 
-            # -----------------------------------
             # Metadata
-            # -----------------------------------
-
             container_id = container.short_id
             container_name = container.name
 
-            # -----------------------------------
             # CPU %
-            # -----------------------------------
-
             cpu_stats = stats.get("cpu_stats", {})
             precpu_stats = stats.get("precpu_stats", {})
 
@@ -163,10 +157,8 @@ def get_container_resource_metrics(client):
                     * 100.0
                 )
 
-            # -----------------------------------
-            # Memory
-            # -----------------------------------
 
+            # Memory
             memory_stats = stats.get("memory_stats", {})
 
             container_memory_usage = memory_stats.get(
@@ -184,28 +176,22 @@ def get_container_resource_metrics(client):
                 container_memory_limit
             )
 
-            # -----------------------------------
-            # Swap
-            # -----------------------------------
 
+            # Swap
             container_swap_usage = (
                 memory_stats.get("stats", {})
                 .get("swap", 0)
             )
 
-            # -----------------------------------
-            # PIDs
-            # -----------------------------------
 
+            # PIDs
             container_pids = (
                 stats.get("pids_stats", {})
                 .get("current", 0)
             )
 
-            # -----------------------------------
-            # Block IO
-            # -----------------------------------
 
+            # Block IO
             blk_read = 0
             blk_write = 0
 
@@ -231,37 +217,29 @@ def get_container_resource_metrics(client):
                 total_io_bytes
             )
 
-            # -----------------------------------
-            # CPU Throttling
-            # -----------------------------------
 
+            # CPU Throttling
             (
                 cpu_throttling_events,
                 cpu_throttled_time
             ) = get_cpu_throttling_metrics(stats)
 
-            # -----------------------------------
-            # Container PID
-            # -----------------------------------
 
+            # Container PID
             container_pid = (
                 container.attrs
                 .get("State", {})
                 .get("Pid")
             )
 
-            # -----------------------------------
-            # File descriptors
-            # -----------------------------------
 
+            # File descriptors
             container_fd_count = get_container_fd_count(
                 container_pid
             )
 
-            # -----------------------------------
-            # Final metrics
-            # -----------------------------------
 
+            # Final metrics
             container_metrics.append({
 
                 "container_id": container_id,
