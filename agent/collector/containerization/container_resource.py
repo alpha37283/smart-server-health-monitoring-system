@@ -111,7 +111,7 @@ def get_container_fd_count(container_pid):
 
 def get_container_resource_metrics(client):
     """
-    Collect per-container resource metrics using Docker SDK.
+    Collect per-container resource metrics.
     """
 
     container_metrics = []
@@ -128,7 +128,7 @@ def get_container_resource_metrics(client):
             stats = container.stats(stream=False)
 
             # -----------------------------------
-            # Basic metadata
+            # Metadata
             # -----------------------------------
 
             container_id = container.short_id
@@ -136,7 +136,6 @@ def get_container_resource_metrics(client):
 
             # -----------------------------------
             # CPU %
-            # Docker official calculation
             # -----------------------------------
 
             cpu_stats = stats.get("cpu_stats", {})
@@ -157,6 +156,7 @@ def get_container_resource_metrics(client):
             container_cpu_percent = 0.0
 
             if system_delta > 0 and cpu_delta > 0:
+
                 container_cpu_percent = (
                     (cpu_delta / system_delta)
                     * online_cpus
@@ -169,17 +169,28 @@ def get_container_resource_metrics(client):
 
             memory_stats = stats.get("memory_stats", {})
 
-            container_memory_usage = memory_stats.get("usage", 0)
+            container_memory_usage = memory_stats.get(
+                "usage",
+                0
+            )
 
-            container_memory_limit = memory_stats.get("limit", 0)
+            container_memory_limit = memory_stats.get(
+                "limit",
+                0
+            )
+
+            container_memory_percent = calculate_memory_percent(
+                container_memory_usage,
+                container_memory_limit
+            )
 
             # -----------------------------------
             # Swap
             # -----------------------------------
 
-            container_swap_usage = memory_stats.get("stats", {}).get(
-                "swap",
-                0
+            container_swap_usage = (
+                memory_stats.get("stats", {})
+                .get("swap", 0)
             )
 
             # -----------------------------------
@@ -213,8 +224,42 @@ def get_container_resource_metrics(client):
                 elif operation == "write":
                     blk_write += entry.get("value", 0)
 
+            total_io_bytes = blk_read + blk_write
+
+            container_io_rate = calculate_io_rate(
+                container_id,
+                total_io_bytes
+            )
+
             # -----------------------------------
-            # Final metric object
+            # CPU Throttling
+            # -----------------------------------
+
+            (
+                cpu_throttling_events,
+                cpu_throttled_time
+            ) = get_cpu_throttling_metrics(stats)
+
+            # -----------------------------------
+            # Container PID
+            # -----------------------------------
+
+            container_pid = (
+                container.attrs
+                .get("State", {})
+                .get("Pid")
+            )
+
+            # -----------------------------------
+            # File descriptors
+            # -----------------------------------
+
+            container_fd_count = get_container_fd_count(
+                container_pid
+            )
+
+            # -----------------------------------
+            # Final metrics
             # -----------------------------------
 
             container_metrics.append({
@@ -231,6 +276,7 @@ def get_container_resource_metrics(client):
                 # Memory
                 "container_memory_usage": container_memory_usage,
                 "container_memory_limit": container_memory_limit,
+                "container_memory_percent": container_memory_percent,
 
                 # Swap
                 "container_swap_usage": container_swap_usage,
@@ -241,6 +287,16 @@ def get_container_resource_metrics(client):
                 # Block IO
                 "container_blk_read_bytes": blk_read,
                 "container_blk_write_bytes": blk_write,
+
+                # IO throughput
+                "container_io_rate": container_io_rate,
+
+                # CPU throttling
+                "cpu_throttling_events": cpu_throttling_events,
+                "cpu_throttled_time": cpu_throttled_time,
+
+                # File descriptors
+                "container_fd_count": container_fd_count,
             })
 
         except Exception:
