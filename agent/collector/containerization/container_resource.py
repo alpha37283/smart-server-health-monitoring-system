@@ -65,6 +65,31 @@ def calculate_io_rate(container_id, current_total_bytes):
     return round(max(io_rate, 0), 2)
 
 
+def get_cpu_throttling_metrics(stats):
+    """
+    Extract CPU throttling metrics from cgroup stats.
+    """
+
+    throttling_data = (
+        stats.get("cpu_stats", {})
+        .get("throttling_data", {})
+    )
+
+    cpu_throttling_events = throttling_data.get(
+        "throttled_periods",
+        0
+    )
+
+    cpu_throttled_time = throttling_data.get(
+        "throttled_time",
+        0
+    )
+
+    return (
+        cpu_throttling_events,
+        cpu_throttled_time
+    )
+
 
 
 def get_container_resource_metrics(client):
