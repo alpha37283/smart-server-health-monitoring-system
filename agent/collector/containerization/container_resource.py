@@ -5,6 +5,21 @@ import time
 from .docker_client import get_docker_client
 
 
+# Previous IO stats for throughput calculation
+_prev_container_io = {}
+
+
+def calculate_memory_percent(usage, limit):
+    """
+    Calculate memory utilization percentage.
+    """
+
+    if limit <= 0:
+        return 0.0
+
+    return round((usage / limit) * 100, 2)
+    
+
 def get_container_resource_metrics(client):
     """
     Collect per-container resource metrics using Docker SDK.
