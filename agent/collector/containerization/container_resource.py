@@ -91,6 +91,23 @@ def get_cpu_throttling_metrics(stats):
     )
 
 
+def get_container_fd_count(container_pid):
+    """
+    Count open file descriptors from /proc.
+    """
+
+    if not container_pid:
+        return 0
+
+    fd_path = f"/proc/{container_pid}/fd"
+
+    try:
+        return len(os.listdir(fd_path))
+
+    except Exception:
+        return 0
+
+
 
 def get_container_resource_metrics(client):
     """
