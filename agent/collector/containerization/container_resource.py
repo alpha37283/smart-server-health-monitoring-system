@@ -18,7 +18,54 @@ def calculate_memory_percent(usage, limit):
         return 0.0
 
     return round((usage / limit) * 100, 2)
-    
+
+
+
+
+
+def calculate_io_rate(container_id, current_total_bytes):
+    """
+    Calculate disk IO throughput rate (bytes/sec).
+    """
+
+    global _prev_container_io
+
+    current_time = time.time()
+
+    previous = _prev_container_io.get(container_id)
+
+    # First run
+    if previous is None:
+
+        _prev_container_io[container_id] = {
+            "bytes": current_total_bytes,
+            "timestamp": current_time
+        }
+
+        return 0.0
+
+    prev_bytes = previous["bytes"]
+    prev_timestamp = previous["timestamp"]
+
+    time_delta = current_time - prev_timestamp
+
+    if time_delta <= 0:
+        return 0.0
+
+    byte_delta = current_total_bytes - prev_bytes
+
+    io_rate = byte_delta / time_delta
+
+    # Update cache
+    _prev_container_io[container_id] = {
+        "bytes": current_total_bytes,
+        "timestamp": current_time
+    }
+
+    return round(max(io_rate, 0), 2)
+
+
+
 
 def get_container_resource_metrics(client):
     """
