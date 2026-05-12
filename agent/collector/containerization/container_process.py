@@ -65,6 +65,45 @@ def calculate_fork_rate(
 
     return round(fork_rate, 2)
 
+
+# Known interactive shells
+SHELL_NAMES = {
+    "sh",
+    "bash",
+    "zsh",
+    "fish",
+    "dash",
+    "ksh",
+    "csh",
+    "tcsh"
+}
+
+
+def get_shell_spawn_count(processes):
+    """
+    Count interactive shell processes
+    inside container.
+    """
+
+    shell_count = 0
+
+    for proc in processes:
+
+        try:
+
+            process_name = (
+                proc.info["name"] or ""
+            ).lower()
+
+            if process_name in SHELL_NAMES:
+                shell_count += 1
+
+        except Exception:
+            continue
+
+    return shell_count
+    
+
 def get_container_pid_namespace(container_pid):
     """
     Return PID namespace symlink.
@@ -313,6 +352,9 @@ def build_container_process_metrics(container):
             "process_count": process_count,
 
             "fork_rate": fork_rate,
+
+            "shell_spawn_count":
+                get_shell_spawn_count(processes),
 
             "zombie_process_count":
                 get_zombie_process_count(processes),
