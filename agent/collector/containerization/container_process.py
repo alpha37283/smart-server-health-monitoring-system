@@ -6,6 +6,64 @@ import psutil
 
 from .docker_client import get_docker_client
 
+# Previous process stats cache
+_prev_process_counts = {}
+
+
+
+def calculate_fork_rate(
+    container_id,
+    current_process_count
+):
+    """
+    Calculate process creation rate
+    (processes/sec).
+    """
+
+    global _prev_process_counts
+
+    current_time = time.time()
+
+    previous = _prev_process_counts.get(
+        container_id
+    )
+
+    # First run
+    if previous is None:
+
+        _prev_process_counts[container_id] = {
+            "count": current_process_count,
+            "timestamp": current_time
+        }
+
+        return 0.0
+
+    previous_count = previous["count"]
+    previous_timestamp = previous["timestamp"]
+
+    time_delta = current_time - previous_timestamp
+
+    if time_delta <= 0:
+        return 0.0
+
+    process_delta = (
+        current_process_count
+        - previous_count
+    )
+
+    # Only count process increases
+    if process_delta < 0:
+        process_delta = 0
+
+    fork_rate = process_delta / time_delta
+
+    # Update cache
+    _prev_process_counts[container_id] = {
+        "count": current_process_count,
+        "timestamp": current_time
+    }
+
+    return round(fork_rate, 2)
 
 def get_container_pid_namespace(container_pid):
     """
@@ -226,13 +284,35 @@ def build_container_process_metrics(container):
             container_pid
         )
 
+        # -----------------------------------
+        # Process count
+        # -----------------------------------
+
+        process_count = get_process_count(
+            processes
+        )
+
+        # -----------------------------------
+        # Fork rate
+        # -----------------------------------
+
+        fork_rate = calculate_fork_rate(
+            container_id,
+            process_count
+        )
+
+        # -----------------------------------
+        # Final metrics
+        # -----------------------------------
+
         metrics = {
 
             "container_id": container_id,
             "container_name": container_name,
 
-            "process_count":
-                get_process_count(processes),
+            "process_count": process_count,
+
+            "fork_rate": fork_rate,
 
             "zombie_process_count":
                 get_zombie_process_count(processes),
@@ -254,67 +334,3 @@ def build_container_process_metrics(container):
 
     except Exception:
         return None
-
-
-def get_container_process_metrics(client):
-    """
-    Collect process metrics for all containers.
-    """
-
-    metrics = []
-
-    try:
-        containers = client.containers.list(all=True)
-
-    except Exception:
-        return metrics
-
-    for container in containers:
-
-        container_metric = (
-            build_container_process_metrics(
-                container
-            )
-        )
-
-        if container_metric:
-            metrics.append(container_metric)
-
-    return metrics
-
-
-async def collect_container_process(event_bus):
-    """
-    Collect container process metrics.
-    """
-
-    client = get_docker_client()
-
-    if client is None:
-
-        event = {
-            "timestamp": time.time(),
-            "type": "container_process_metrics",
-            "data": {
-                "runtime_available": False,
-                "containers": []
-            }
-        }
-
-        await event_bus.publish(event)
-        return
-
-    metrics = get_container_process_metrics(client)
-
-    event = {
-        "timestamp": time.time(),
-        "type": "container_process_metrics",
-        "data": {
-            "runtime_available": True,
-            "containers": metrics
-        }
-    }
-
-    print(". . . Container Process Data collected . . .")
-
-    await event_bus.publish(event)
