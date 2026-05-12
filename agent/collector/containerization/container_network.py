@@ -4,7 +4,7 @@ import time
 
 from .docker_client import get_docker_client
 
-import psutils
+import psutil
 
 import os
 
