@@ -4,6 +4,59 @@ import time
 
 from .docker_client import get_docker_client
 
+import psutils
+
+import os
+
+
+def get_active_container_connections(container_pid):
+    """
+    Count active ESTABLISHED connections
+    belonging to a container namespace.
+    """
+
+    if not container_pid:
+        return 0
+
+    try:
+
+        target_ns = os.readlink(
+            f"/proc/{container_pid}/ns/net"
+        )
+
+    except Exception:
+        return 0
+
+    active_connections = 0
+
+    try:
+
+        for conn in psutil.net_connections(kind="inet"):
+
+            if conn.status != "ESTABLISHED":
+                continue
+
+            if conn.pid is None:
+                continue
+
+            try:
+
+                conn_ns = os.readlink(
+                    f"/proc/{conn.pid}/ns/net"
+                )
+
+                if conn_ns == target_ns:
+                    active_connections += 1
+
+            except Exception:
+                continue
+
+    except Exception:
+        return 0
+
+    return active_connections
+
+
 
 # Store previous bandwidth stats
 _prev_network_stats = {}
@@ -185,6 +238,30 @@ def get_container_network_metrics(client):
                             })
 
             # -----------------------------------
+            # Container PID
+            # -----------------------------------
+
+            container_pid = (
+                container.attrs
+                .get("State", {})
+                .get("Pid")
+            )
+
+
+
+            # -----------------------------------
+            # Active connections
+            # -----------------------------------
+
+            active_container_connections = (
+                get_active_container_connections(
+                    container_pid
+                )
+            )
+
+
+
+            # -----------------------------------
             # Final metrics
             # -----------------------------------
 
@@ -211,6 +288,9 @@ def get_container_network_metrics(client):
 
                 # Throughput
                 "network_bandwidth_rate": network_bandwidth_rate,
+
+                # active connections containers
+                "active_container_connections": active_container_connections,
             })
 
         except Exception:
@@ -233,7 +313,8 @@ async def collect_container_network(event_bus):
             "type": "container_network_metrics",
             "data": {
                 "runtime_available": False,
-                "containers": []
+                "containers": [],
+                
             }
         }
 
