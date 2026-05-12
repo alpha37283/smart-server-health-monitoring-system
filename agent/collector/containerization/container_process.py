@@ -6,6 +6,70 @@ import psutil
 
 from .docker_client import get_docker_client
 
+
+# Track docker exec events
+_exec_event_counts = {}
+
+
+def update_exec_event_counts(client):
+    """
+    Update docker exec event counters
+    from Docker Events API.
+    """
+
+    global _exec_event_counts
+
+    try:
+
+        events = client.events(
+            decode=True,
+            since=int(time.time()) - 5
+        )
+
+        for event in events:
+
+            try:
+
+                if event.get("Type") != "container":
+                    continue
+
+                action = (
+                    event.get("Action", "")
+                    .lower()
+                )
+
+                # Docker exec_create / exec_start
+                if not action.startswith("exec"):
+                    continue
+
+                attributes = (
+                    event.get("Actor", {})
+                    .get("Attributes", {})
+                )
+
+                container_id = (
+                    attributes.get("container")
+                    or event.get("id", "")[:12]
+                )
+
+                if not container_id:
+                    continue
+
+                _exec_event_counts[
+                    container_id
+                ] = (
+                    _exec_event_counts.get(
+                        container_id,
+                        0
+                    ) + 1
+                )
+
+            except Exception:
+                continue
+
+    except Exception:
+        pass
+
 # Previous process stats cache
 _prev_process_counts = {}
 
@@ -133,6 +197,9 @@ def get_container_processes(container_pid):
 
     if not target_namespace:
         return processes
+
+    # Update exec activity cache
+    update_exec_event_counts(client)
 
     for proc in psutil.process_iter([
         "pid",
@@ -348,6 +415,8 @@ def build_container_process_metrics(container):
 
             "container_id": container_id,
             "container_name": container_name,
+
+            "exec_command_count": get_exec_command_count(container_id),
 
             "process_count": process_count,
 
