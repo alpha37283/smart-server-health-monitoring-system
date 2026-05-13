@@ -4,6 +4,8 @@ import time
 
 from .docker_client import get_docker_client
 
+from datetime import datetime, timezone
+
 
 # Image pull tracking
 
@@ -60,6 +62,46 @@ def update_image_pull_frequency(client):
 
     except Exception:
         pass
+
+
+def calculate_image_age_days(created_timestamp):
+    """
+    Calculate image age in days.
+    """
+
+    if not created_timestamp:
+        return None
+
+    try:
+
+        # Remove nanoseconds if present
+        created_timestamp = (
+            created_timestamp.split(".")[0]
+            + "Z"
+        )
+
+        created_time = datetime.strptime(
+            created_timestamp,
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
+
+        created_time = created_time.replace(
+            tzinfo=timezone.utc
+        )
+
+        current_time = datetime.now(
+            timezone.utc
+        )
+
+        age_days = (
+            current_time - created_time
+        ).days
+
+        return age_days
+
+    except Exception:
+        return None
+
 
 
 def get_image_pull_frequency(image_id):
@@ -119,6 +161,10 @@ def build_image_metrics(image):
             image.attrs.get("Size", 0)
         )
 
+        created_timestamp = (image.attrs.get("Created"))
+
+        image_age_days = calculate_image_age_days(created_timestamp)
+
         metrics = {
 
             "image_id": image_id,
@@ -132,6 +178,9 @@ def build_image_metrics(image):
                 get_image_pull_frequency(
                     image_id
                 ),
+
+            "image_age_days":
+                image_age_days,
         }
 
         return metrics
