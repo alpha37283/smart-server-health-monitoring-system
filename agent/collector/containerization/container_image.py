@@ -147,6 +147,41 @@ def get_dangling_images(images):
     return dangling_count
 
 
+
+def calculate_duplicate_image_count(images):
+    """
+    Count duplicate/redundant images
+    based on shared repo tags.
+    """
+
+    tag_groups = {}
+
+    for image in images:
+
+        try:
+
+            tags = image.tags
+
+            for tag in tags:
+
+                tag_groups[tag] = (
+                    tag_groups.get(tag, 0) + 1
+                )
+
+        except Exception:
+            continue
+
+    duplicate_count = 0
+
+    for count in tag_groups.values():
+
+        if count > 1:
+            duplicate_count += (count - 1)
+
+    return duplicate_count
+
+
+
 def build_image_metrics(image):
     """
     Build metrics for single image.
@@ -219,6 +254,8 @@ def get_container_image_metrics(client):
         if image_metrics:
             metrics.append(image_metrics)
 
+    duplicate_image_count = (calculate_duplicate_image_count(images))
+
     return {
 
         "total_images":
@@ -226,6 +263,9 @@ def get_container_image_metrics(client):
 
         "dangling_images":
             get_dangling_images(images),
+
+        "duplicate_image_count":
+            duplicate_image_count,
 
         "images": metrics
     }
@@ -272,6 +312,9 @@ async def collect_container_images(event_bus):
 
             "dangling_images":
                 metrics["dangling_images"],
+                
+            "duplicate_image_count":
+                metrics["duplicate_image_count"],
 
             "images":
                 metrics["images"]
