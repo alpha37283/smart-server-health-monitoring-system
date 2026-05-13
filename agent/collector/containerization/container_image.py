@@ -147,6 +147,29 @@ def get_dangling_images(images):
     return dangling_count
 
 
+def calculate_latest_tag_usage(images):
+    """
+    Count images using latest tag.
+    """
+
+    latest_count = 0
+
+    for image in images:
+
+        try:
+
+            tags = image.tags
+
+            for tag in tags:
+
+                if tag.endswith(":latest"):
+                    latest_count += 1
+
+        except Exception:
+            continue
+
+    return latest_count
+
 
 def calculate_duplicate_image_count(images):
     """
@@ -256,17 +279,19 @@ def get_container_image_metrics(client):
 
     duplicate_image_count = (calculate_duplicate_image_count(images))
 
+
+    latest_tag_usage = (calculate_latest_tag_usage(images))
+
     return {
 
-        "total_images":
-            get_total_images(images),
+        "total_images": get_total_images(images),
 
-        "dangling_images":
-            get_dangling_images(images),
+        "dangling_images": get_dangling_images(images),
 
-        "duplicate_image_count":
-            duplicate_image_count,
+        "duplicate_image_count": duplicate_image_count, 
 
+        "latest_tag_usage": latest_tag_usage,
+        
         "images": metrics
     }
 
@@ -307,17 +332,15 @@ async def collect_container_images(event_bus):
 
             "runtime_available": True,
 
-            "total_images":
-                metrics["total_images"],
+            "total_images": metrics["total_images"],
 
-            "dangling_images":
-                metrics["dangling_images"],
-                
-            "duplicate_image_count":
-                metrics["duplicate_image_count"],
+            "dangling_images": metrics["dangling_images"],
 
-            "images":
-                metrics["images"]
+            "duplicate_image_count": metrics["duplicate_image_count"],
+
+            "latest_tag_usage": metrics["latest_tag_usage"],
+            
+            "images": metrics["images"]
         }
     }
 
